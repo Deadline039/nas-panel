@@ -1,0 +1,1 @@
+GEN_CSRCS += _nas_logo_alpha_82x82.c _offline_alpha_15x15.c _upload_alpha_20x35.c _download_alpha_20x35.c _network_green_alpha_35x35.c _hdd_alpha_38x46.c _time_alpha_20x20.c _hdd_health_alpha_20x20.c _temperature_alpha_10x22.c _start_cycle_alpha_20x20.c _fan_alpha_26x26.c _temperature_alpha_12x26.c

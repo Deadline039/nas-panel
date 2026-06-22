@@ -1,0 +1,5 @@
+lib/
+lvgl/
+lvgl-simulator/
+temp/
+build/

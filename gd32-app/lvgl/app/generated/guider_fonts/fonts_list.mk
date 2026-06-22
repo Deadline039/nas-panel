@@ -1,0 +1,1 @@
+GEN_CSRCS += lv_font_Inter_Regular_16.c lv_font_Inter_Regular_12.c lv_font_Inter_Bold_12.c lv_font_Inter_Bold_26.c lv_font_Inter_Bold_20.c lv_font_Inter_Bold_16.c lv_font_Inter_Bold_14.c lv_font_Inter_Bold_18.c lv_font_Inter_Regular_14.c
