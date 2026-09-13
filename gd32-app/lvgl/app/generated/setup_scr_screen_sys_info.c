@@ -167,16 +167,16 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_sys_info_cont_INFO, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_sys_info_cont_INFO, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_label_name_val
     ui->screen_sys_info_label_name_val = lv_label_create(ui->screen_sys_info_cont_INFO);
     lv_label_set_text(ui->screen_sys_info_label_name_val, "NAS NAME");
     lv_label_set_long_mode(ui->screen_sys_info_label_name_val, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_pos(ui->screen_sys_info_label_name_val, 72, 13);
+    lv_obj_set_pos(ui->screen_sys_info_label_name_val, 72, 12);
     lv_obj_set_size(ui->screen_sys_info_label_name_val, 130, 17);
 
     //Write style for screen_sys_info_label_name_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -222,7 +222,7 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     ui->screen_sys_info_label_os_val = lv_label_create(ui->screen_sys_info_cont_INFO);
     lv_label_set_text(ui->screen_sys_info_label_os_val, "Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-124-generic x86_64)");
     lv_label_set_long_mode(ui->screen_sys_info_label_os_val, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_pos(ui->screen_sys_info_label_os_val, 72, 41);
+    lv_obj_set_pos(ui->screen_sys_info_label_os_val, 72, 40);
     lv_obj_set_size(ui->screen_sys_info_label_os_val, 130, 17);
 
     //Write style for screen_sys_info_label_os_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -370,9 +370,9 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_sys_info_cont_FAN_TEMP, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_sys_info_cont_FAN_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_bar_hdd_fan
@@ -385,10 +385,10 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_bar_hdd_fan, 100, 5);
 
     //Write style for screen_sys_info_bar_hdd_fan, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_bar_hdd_fan, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_sys_info_bar_hdd_fan, 60, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_sys_info_bar_hdd_fan, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_sys_info_bar_hdd_fan, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_bar_hdd_fan, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_sys_info_bar_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write style for screen_sys_info_bar_hdd_fan, Part: LV_PART_INDICATOR, State: LV_STATE_DEFAULT.
@@ -405,20 +405,20 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_label_hdd_fan, 40, 12);
 
     //Write style for screen_sys_info_label_hdd_fan, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_sys_info_label_hdd_fan, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui->screen_sys_info_label_hdd_fan, &lv_font_Inter_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_sys_info_label_hdd_fan, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_sys_info_label_hdd_fan, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_right(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_sys_info_label_hdd_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_label_HDD_FAN
     ui->screen_sys_info_label_HDD_FAN = lv_label_create(ui->screen_sys_info_cont_FAN_TEMP);
@@ -453,10 +453,10 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_img_HDD_FAN, 26, 26);
 
     //Write style for screen_sys_info_img_HDD_FAN, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_img_HDD_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_HDD_FAN, true, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui->screen_sys_info_img_HDD_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_sys_info_img_HDD_FAN, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_img_HDD_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_HDD_FAN, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_bar_cpu_fan
     ui->screen_sys_info_bar_cpu_fan = lv_bar_create(ui->screen_sys_info_cont_FAN_TEMP);
@@ -468,10 +468,10 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_bar_cpu_fan, 100, 5);
 
     //Write style for screen_sys_info_bar_cpu_fan, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_bar_cpu_fan, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_sys_info_bar_cpu_fan, 60, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_sys_info_bar_cpu_fan, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_sys_info_bar_cpu_fan, LV_GRAD_DIR_NONE, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_bar_cpu_fan, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_sys_info_bar_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write style for screen_sys_info_bar_cpu_fan, Part: LV_PART_INDICATOR, State: LV_STATE_DEFAULT.
@@ -490,18 +490,18 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     //Write style for screen_sys_info_label_cpu_fan, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_sys_info_label_cpu_fan, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui->screen_sys_info_label_cpu_fan, &lv_font_Inter_Regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_sys_info_label_cpu_fan, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_sys_info_label_cpu_fan, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_sys_info_label_cpu_fan, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_label_CPU_FAN
     ui->screen_sys_info_label_CPU_FAN = lv_label_create(ui->screen_sys_info_cont_FAN_TEMP);
@@ -536,10 +536,10 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_img_CPU_FAN, 26, 26);
 
     //Write style for screen_sys_info_img_CPU_FAN, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_img_CPU_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_CPU_FAN, true, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui->screen_sys_info_img_CPU_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_sys_info_img_CPU_FAN, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_img_CPU_FAN, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_CPU_FAN, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_sys_info_label_cpu_temp_val
     ui->screen_sys_info_label_cpu_temp_val = lv_label_create(ui->screen_sys_info_cont_FAN_TEMP);
@@ -572,8 +572,8 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_label_CPU_TEMP, 35, 16);
 
     //Write style for screen_sys_info_label_CPU_TEMP, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_label_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(ui->screen_sys_info_label_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_label_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_sys_info_label_CPU_TEMP, lv_color_hex(0x717171), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui->screen_sys_info_label_CPU_TEMP, &lv_font_Inter_Regular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_sys_info_label_CPU_TEMP, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -597,10 +597,10 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     lv_obj_set_size(ui->screen_sys_info_img_CPU_TEMP, 12, 26);
 
     //Write style for screen_sys_info_img_CPU_TEMP, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_radius(ui->screen_sys_info_img_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_CPU_TEMP, true, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui->screen_sys_info_img_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_img_opa(ui->screen_sys_info_img_CPU_TEMP, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_sys_info_img_CPU_TEMP, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(ui->screen_sys_info_img_CPU_TEMP, true, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //The custom code of screen_sys_info.
 

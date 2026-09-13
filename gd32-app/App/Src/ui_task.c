@@ -17,7 +17,8 @@
 
 #include <gui_guider.h>
 #include <custom.h>
-#include <sys/stat.h>
+
+#include <usb_data.h>
 
 #define PRESS_KEY_DURATION_MS 50
 

@@ -167,9 +167,9 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     lv_obj_set_style_radius(ui->screen_about_qrcode_cont_ABOUT, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_about_qrcode_cont_ABOUT, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_about_qrcode_label_fw_ver_val
