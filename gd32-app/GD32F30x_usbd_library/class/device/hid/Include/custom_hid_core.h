@@ -37,18 +37,25 @@ OF SUCH DAMAGE.
 
 #include "usbd_enum.h"
 #include "usb_hid.h"
+#include <stdbool.h>
+#include "usb_protocol.h"
 
-#define DESC_LEN_REPORT             96U                     /*!< report descriptor length */
-#define DESC_LEN_CONFIG             41U                     /*!< configuration descriptor length */
+#define DESC_LEN_REPORT 26U /*!< report descriptor length */
+#define DESC_LEN_CONFIG 41U /*!< configuration descriptor length */
 
-#define MAX_PERIPH_NUM              4U                      /*!< maximum peripheral number */
+#define MAX_PERIPH_NUM  4U /*!< maximum peripheral number */
 
 typedef struct {
-    uint8_t data[2];                               /*!< custom HID data packet buff */
+    uint8_t data[UDATA_FRAME_SIZE];
+    uint8_t received[UDATA_FRAME_SIZE];
+    uint8_t control[UDATA_FRAME_SIZE];
+    uint8_t transmit[UDATA_FRAME_SIZE];
+    volatile bool tx_busy;
+    volatile bool rx_ready; /*!< A complete report is waiting for the task. */
 
-    uint8_t reportID;                              /*!< custom HID report id */
-    uint8_t idlestate;                             /*!< HID device idle state */
-    uint8_t protocol;                              /*!< HID device protocol */
+    uint8_t reportID;  /*!< custom HID report id */
+    uint8_t idlestate; /*!< HID device idle state */
+    uint8_t protocol;  /*!< HID device protocol */
 } custom_hid_handler;
 
 typedef struct {
@@ -63,5 +70,13 @@ extern usb_class custom_hid_class;
 uint8_t custom_hid_itfop_register(usb_dev *udev, hid_fop_handler *hid_fop);
 /* send custom HID report */
 uint8_t custom_hid_report_send(usb_dev *udev, uint8_t *report, uint16_t len);
+
+/**
+ * @brief Read a complete received report from a task critical section.
+ * @param udev USB device.
+ * @param report Destination report buffer.
+ * @return True if a report is available, otherwise false.
+ */
+bool custom_hid_report_read(usb_dev *udev, udata_frame_t *report);
 
 #endif /* CUSTOM_HID_CORE_H */
