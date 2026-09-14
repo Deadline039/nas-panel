@@ -22,7 +22,6 @@ typedef struct
 	bool screen_overview_del;
 	lv_obj_t *screen_overview_img_NAS_LOGO;
 	lv_obj_t *screen_overview_label_nas_name;
-	lv_obj_t *screen_overview_img_nas_status;
 	lv_obj_t *screen_overview_label_nas_state;
 	lv_obj_t *screen_overview_cont_MEM;
 	lv_obj_t *screen_overview_label_mem;
@@ -50,6 +49,7 @@ typedef struct
 	lv_obj_t *screen_overview_label_indicator3;
 	lv_obj_t *screen_overview_label_indicator4;
 	lv_obj_t *screen_overview_label_indicator5;
+	lv_obj_t *screen_overview_led_nas_status;
 	lv_obj_t *screen_network;
 	bool screen_network_del;
 	lv_obj_t *screen_network_cont_INFO;
@@ -96,7 +96,7 @@ typedef struct
 	lv_obj_t *screen_storage_label_capacity;
 	lv_obj_t *screen_storage_label_used;
 	lv_obj_t *screen_storage_label_capacity_val;
-	lv_obj_t *screen_storage_label_usage_precent;
+	lv_obj_t *screen_storage_label_usage_percent;
 	lv_obj_t *screen_storage_cont_STATE;
 	lv_obj_t *screen_storage_img_USAGE_TIME;
 	lv_obj_t *screen_storage_img_STATUS;
@@ -182,7 +182,6 @@ void setup_scr_screen_storage(lv_ui *ui);
 void setup_scr_screen_sys_info(lv_ui *ui);
 void setup_scr_screen_about_qrcode(lv_ui *ui);
 LV_IMG_DECLARE(_nas_logo_alpha_82x82);
-LV_IMG_DECLARE(_offline_alpha_15x15);
 LV_IMG_DECLARE(_upload_alpha_20x35);
 LV_IMG_DECLARE(_download_alpha_20x35);
 LV_IMG_DECLARE(_network_green_alpha_35x35);

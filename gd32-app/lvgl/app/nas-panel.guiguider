@@ -294,6 +294,21 @@
 			"flag": [],
 			"list": [
 				{
+					"name": "led_nas_status",
+					"id": "7uovo8gd",
+					"type": "led",
+					"left": 12,
+					"top": 121,
+					"visible": true,
+					"isLock": false,
+					"flag": [],
+					"width": 10,
+					"height": 10,
+					"default_style": false,
+					"led_set_bright": 255,
+					"led_color": "#2FDA64"
+				},
+				{
 					"name": "label_indicator5",
 					"id": "6nwfl3kd",
 					"type": "label",
@@ -2700,38 +2715,6 @@
 					]
 				},
 				{
-					"name": "img_nas_status",
-					"id": "znk3z2xr",
-					"type": "img",
-					"left": 11,
-					"top": 119,
-					"visible": true,
-					"isLock": false,
-					"flag": [],
-					"width": 15,
-					"height": 15,
-					"default_style": false,
-					"use_fs": false,
-					"fs_type": "flash",
-					"sd_path": "",
-					"img_path": "import/image/offline.png",
-					"rotate": 0,
-					"x": 50,
-					"y": 50,
-					"color_format": "true-color-alpha",
-					"style": [
-						{
-							"part": "LV_PART_MAIN",
-							"state": "LV_STATE_DEFAULT",
-							"disable": false,
-							"image_recolor": "#ffffff",
-							"image_recolor_opa": 0,
-							"image_opa": 255,
-							"radius": 0
-						}
-					]
-				},
-				{
 					"name": "label_nas_name",
 					"id": "t43q4sn3",
 					"type": "label",
@@ -3559,11 +3542,11 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 80,
+							"width": 90,
 							"height": 16,
 							"default_style": false,
 							"text": "enp1s0",
-							"long_mode": "LV_LABEL_LONG_WRAP",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -4152,12 +4135,12 @@
 							"name": "label_down_total_val",
 							"id": "zbbecjly",
 							"type": "label",
-							"left": 42,
+							"left": 30,
 							"top": 92,
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 40,
+							"width": 52,
 							"height": 14,
 							"default_style": false,
 							"text": "0",
@@ -4285,7 +4268,7 @@
 							"id": "cw4j9rpt",
 							"type": "label",
 							"left": 27,
-							"top": 14,
+							"top": 13,
 							"visible": true,
 							"isLock": false,
 							"flag": [],
@@ -4584,12 +4567,12 @@
 							"name": "label_up_total_val",
 							"id": "4wcbpkn2",
 							"type": "label",
-							"left": 42,
+							"left": 30,
 							"top": 35,
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 40,
+							"width": 52,
 							"height": 14,
 							"default_style": false,
 							"text": "0",
@@ -4840,11 +4823,11 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 80,
+							"width": 100,
 							"height": 16,
 							"default_style": false,
 							"text": "0.0.0.0",
-							"long_mode": "LV_LABEL_LONG_WRAP",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -5040,11 +5023,11 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 80,
+							"width": 100,
 							"height": 16,
 							"default_style": false,
 							"text": "0.0.0.0",
-							"long_mode": "LV_LABEL_LONG_WRAP",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -5240,11 +5223,11 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 80,
+							"width": 100,
 							"height": 16,
 							"default_style": false,
 							"text": "0.0.0.0",
-							"long_mode": "LV_LABEL_LONG_WRAP",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -6003,7 +5986,7 @@
 					"scrollbar_mode": "OFF",
 					"child": [
 						{
-							"name": "label_usage_precent",
+							"name": "label_usage_percent",
 							"id": "uh4reyux",
 							"type": "label",
 							"left": 152,
@@ -7569,7 +7552,7 @@
 									"border_opa": 255,
 									"border_color": "#2195f6",
 									"radius": 0,
-									"text_color": "#ffffff",
+									"text_color": "#2FDA64",
 									"text_opa": 255,
 									"font": 16,
 									"text_align": "LV_TEXT_ALIGN_CENTER",
@@ -8396,7 +8379,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "8G DDR3@1600MHz",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -8596,7 +8579,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "Intel J1900@1.99GHz",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -8796,7 +8779,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-124-generic x86_64)",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -9672,7 +9655,7 @@
 					"height": 17,
 					"default_style": false,
 					"text": "https://github.com/Deadline039/nas-panel",
-					"long_mode": "LV_LABEL_LONG_SCROLL",
+					"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 					"is_static": false,
 					"custom_attribute": [],
 					"attribute_type": "",
@@ -10000,7 +9983,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "MIT License Copyright (c) Deadline039",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -10200,7 +10183,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "v1.0",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -10400,7 +10383,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "June 20, 2026 14:42:21",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -10600,7 +10583,7 @@
 							"height": 17,
 							"default_style": false,
 							"text": "v1.0",
-							"long_mode": "LV_LABEL_LONG_SCROLL",
+							"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 							"is_static": false,
 							"custom_attribute": [],
 							"attribute_type": "",
@@ -11444,41 +11427,6 @@
 								"shadow_spread": 0,
 								"shadow_ofs_x": 0,
 								"shadow_ofs_y": 0
-							}
-						]
-					},
-					{
-						"name": "screen_overview_img_nas_status",
-						"id": "znk3z2xr",
-						"type": "img",
-						"visible": true,
-						"flag": [],
-						"pos": [
-							11,
-							119
-						],
-						"size": [
-							15,
-							15
-						],
-						"default_style": false,
-						"img_path": "import/image/offline.png",
-						"color_format": "true-color-alpha",
-						"rotate": 0,
-						"pivot": "50,50",
-						"use_fs": false,
-						"fs_type": "flash",
-						"img_flash_path": "F:/offline.png",
-						"img_sd_path": "S:/offline.png",
-						"style": [
-							{
-								"part": "LV_PART_MAIN",
-								"state": "LV_STATE_DEFAULT",
-								"disable": false,
-								"image_recolor": "#ffffff",
-								"image_recolor_opa": 0,
-								"image_opa": 255,
-								"radius": 0
 							}
 						]
 					},
@@ -13968,6 +13916,24 @@
 								"shadow_ofs_y": 0
 							}
 						]
+					},
+					{
+						"name": "screen_overview_led_nas_status",
+						"id": "7uovo8gd",
+						"type": "led",
+						"visible": true,
+						"flag": [],
+						"pos": [
+							12,
+							121
+						],
+						"size": [
+							10,
+							10
+						],
+						"default_style": false,
+						"led_set_bright": 255,
+						"led_color": "#2FDA64"
 					}
 				]
 			},
@@ -14042,14 +14008,14 @@
 									98
 								],
 								"size": [
-									80,
+									100,
 									16
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "0.0.0.0",
-								"long_mode": "LV_LABEL_LONG_WRAP",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -14248,14 +14214,14 @@
 									61
 								],
 								"size": [
-									80,
+									100,
 									16
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "0.0.0.0",
-								"long_mode": "LV_LABEL_LONG_WRAP",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -14454,14 +14420,14 @@
 									24
 								],
 								"size": [
-									80,
+									100,
 									16
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "0.0.0.0",
-								"long_mode": "LV_LABEL_LONG_WRAP",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -14710,11 +14676,11 @@
 								"visible": true,
 								"flag": [],
 								"pos": [
-									42,
+									30,
 									35
 								],
 								"size": [
-									40,
+									52,
 									14
 								],
 								"default_style": false,
@@ -15020,7 +14986,7 @@
 								"flag": [],
 								"pos": [
 									27,
-									14
+									13
 								],
 								"size": [
 									55,
@@ -15157,11 +15123,11 @@
 								"visible": true,
 								"flag": [],
 								"pos": [
-									42,
+									30,
 									92
 								],
 								"size": [
-									40,
+									52,
 									14
 								],
 								"default_style": false,
@@ -15783,14 +15749,14 @@
 									21
 								],
 								"size": [
-									80,
+									90,
 									16
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "enp1s0",
-								"long_mode": "LV_LABEL_LONG_WRAP",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -17886,7 +17852,7 @@
 								]
 							},
 							{
-								"name": "screen_storage_label_usage_precent",
+								"name": "screen_storage_label_usage_percent",
 								"id": "uh4reyux",
 								"type": "label",
 								"visible": true,
@@ -19430,7 +19396,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-124-generic x86_64)",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -19636,7 +19602,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "Intel J1900@1.99GHz",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -19842,7 +19808,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "8G DDR3@1600MHz",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -20744,7 +20710,7 @@
 										"border_opa": 255,
 										"border_color": "#2195f6",
 										"radius": 0,
-										"text_color": "#ffffff",
+										"text_color": "#2FDA64",
 										"text_opa": 255,
 										"font": 16,
 										"text_align": "LV_TEXT_ALIGN_CENTER",
@@ -21583,7 +21549,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "v1.0",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -21789,7 +21755,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "June 20, 2026 14:42:21",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -21995,7 +21961,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "v1.0",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -22201,7 +22167,7 @@
 								"attribute_type": "",
 								"custom_attribute": [],
 								"text": "MIT License Copyright (c) Deadline039",
-								"long_mode": "LV_LABEL_LONG_SCROLL",
+								"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 								"is_static": false,
 								"style": [
 									{
@@ -22565,7 +22531,7 @@
 						"attribute_type": "",
 						"custom_attribute": [],
 						"text": "https://github.com/Deadline039/nas-panel",
-						"long_mode": "LV_LABEL_LONG_SCROLL",
+						"long_mode": "LV_LABEL_LONG_SCROLL_CIRCULAR",
 						"is_static": false,
 						"style": [
 							{

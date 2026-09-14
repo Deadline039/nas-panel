@@ -50,9 +50,9 @@ void setup_scr_screen_network(lv_ui *ui)
     //Write codes screen_network_label_gateway_val
     ui->screen_network_label_gateway_val = lv_label_create(ui->screen_network_cont_INFO);
     lv_label_set_text(ui->screen_network_label_gateway_val, "0.0.0.0");
-    lv_label_set_long_mode(ui->screen_network_label_gateway_val, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_network_label_gateway_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_network_label_gateway_val, 9, 98);
-    lv_obj_set_size(ui->screen_network_label_gateway_val, 80, 16);
+    lv_obj_set_size(ui->screen_network_label_gateway_val, 100, 16);
 
     //Write style for screen_network_label_gateway_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_gateway_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -96,9 +96,9 @@ void setup_scr_screen_network(lv_ui *ui)
     //Write codes screen_network_label_subnet_mask
     ui->screen_network_label_subnet_mask = lv_label_create(ui->screen_network_cont_INFO);
     lv_label_set_text(ui->screen_network_label_subnet_mask, "0.0.0.0");
-    lv_label_set_long_mode(ui->screen_network_label_subnet_mask, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_network_label_subnet_mask, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_network_label_subnet_mask, 9, 61);
-    lv_obj_set_size(ui->screen_network_label_subnet_mask, 80, 16);
+    lv_obj_set_size(ui->screen_network_label_subnet_mask, 100, 16);
 
     //Write style for screen_network_label_subnet_mask, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_subnet_mask, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -142,9 +142,9 @@ void setup_scr_screen_network(lv_ui *ui)
     //Write codes screen_network_label_ip_addr
     ui->screen_network_label_ip_addr = lv_label_create(ui->screen_network_cont_INFO);
     lv_label_set_text(ui->screen_network_label_ip_addr, "0.0.0.0");
-    lv_label_set_long_mode(ui->screen_network_label_ip_addr, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_network_label_ip_addr, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_network_label_ip_addr, 9, 24);
-    lv_obj_set_size(ui->screen_network_label_ip_addr, 80, 16);
+    lv_obj_set_size(ui->screen_network_label_ip_addr, 100, 16);
 
     //Write style for screen_network_label_ip_addr, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_ip_addr, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -208,8 +208,8 @@ void setup_scr_screen_network(lv_ui *ui)
     ui->screen_network_label_up_total_val = lv_label_create(ui->screen_network_cont_SPEED);
     lv_label_set_text(ui->screen_network_label_up_total_val, "0");
     lv_label_set_long_mode(ui->screen_network_label_up_total_val, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_network_label_up_total_val, 42, 35);
-    lv_obj_set_size(ui->screen_network_label_up_total_val, 40, 14);
+    lv_obj_set_pos(ui->screen_network_label_up_total_val, 30, 35);
+    lv_obj_set_size(ui->screen_network_label_up_total_val, 52, 14);
 
     //Write style for screen_network_label_up_total_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_up_total_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -277,7 +277,7 @@ void setup_scr_screen_network(lv_ui *ui)
     ui->screen_network_label_up_spd_val = lv_label_create(ui->screen_network_cont_SPEED);
     lv_label_set_text(ui->screen_network_label_up_spd_val, "0");
     lv_label_set_long_mode(ui->screen_network_label_up_spd_val, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_network_label_up_spd_val, 27, 14);
+    lv_obj_set_pos(ui->screen_network_label_up_spd_val, 27, 13);
     lv_obj_set_size(ui->screen_network_label_up_spd_val, 55, 16);
 
     //Write style for screen_network_label_up_spd_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -315,8 +315,8 @@ void setup_scr_screen_network(lv_ui *ui)
     ui->screen_network_label_down_total_val = lv_label_create(ui->screen_network_cont_SPEED);
     lv_label_set_text(ui->screen_network_label_down_total_val, "0");
     lv_label_set_long_mode(ui->screen_network_label_down_total_val, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_network_label_down_total_val, 42, 92);
-    lv_obj_set_size(ui->screen_network_label_down_total_val, 40, 14);
+    lv_obj_set_pos(ui->screen_network_label_down_total_val, 30, 92);
+    lv_obj_set_size(ui->screen_network_label_down_total_val, 52, 14);
 
     //Write style for screen_network_label_down_total_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_down_total_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -470,9 +470,9 @@ void setup_scr_screen_network(lv_ui *ui)
     //Write codes screen_network_label_eth_name
     ui->screen_network_label_eth_name = lv_label_create(ui->screen_network_cont_ETH_NAME);
     lv_label_set_text(ui->screen_network_label_eth_name, "enp1s0");
-    lv_label_set_long_mode(ui->screen_network_label_eth_name, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(ui->screen_network_label_eth_name, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_network_label_eth_name, 52, 21);
-    lv_obj_set_size(ui->screen_network_label_eth_name, 80, 16);
+    lv_obj_set_size(ui->screen_network_label_eth_name, 90, 16);
 
     //Write style for screen_network_label_eth_name, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_network_label_eth_name, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

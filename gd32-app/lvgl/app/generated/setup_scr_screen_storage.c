@@ -334,28 +334,28 @@ void setup_scr_screen_storage(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_storage_label_capacity_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_storage_label_capacity_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_storage_label_usage_precent
-    ui->screen_storage_label_usage_precent = lv_label_create(ui->screen_storage_cont_DISK_OVERVIEW);
-    lv_label_set_text(ui->screen_storage_label_usage_precent, "100%");
-    lv_label_set_long_mode(ui->screen_storage_label_usage_precent, LV_LABEL_LONG_WRAP);
-    lv_obj_set_pos(ui->screen_storage_label_usage_precent, 152, 49);
-    lv_obj_set_size(ui->screen_storage_label_usage_precent, 55, 18);
+    //Write codes screen_storage_label_usage_percent
+    ui->screen_storage_label_usage_percent = lv_label_create(ui->screen_storage_cont_DISK_OVERVIEW);
+    lv_label_set_text(ui->screen_storage_label_usage_percent, "100%");
+    lv_label_set_long_mode(ui->screen_storage_label_usage_percent, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_storage_label_usage_percent, 152, 49);
+    lv_obj_set_size(ui->screen_storage_label_usage_percent, 55, 18);
 
-    //Write style for screen_storage_label_usage_precent, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_border_width(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_storage_label_usage_precent, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_storage_label_usage_precent, &lv_font_Inter_Bold_18, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui->screen_storage_label_usage_precent, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(ui->screen_storage_label_usage_precent, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui->screen_storage_label_usage_precent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    //Write style for screen_storage_label_usage_percent, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_border_width(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_storage_label_usage_percent, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_storage_label_usage_percent, &lv_font_Inter_Bold_18, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui->screen_storage_label_usage_percent, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui->screen_storage_label_usage_percent, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui->screen_storage_label_usage_percent, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     //Write codes screen_storage_cont_STATE
     ui->screen_storage_cont_STATE = lv_obj_create(ui->screen_storage);

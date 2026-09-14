@@ -66,21 +66,6 @@ void setup_scr_screen_overview(lv_ui *ui)
     lv_obj_set_style_pad_left(ui->screen_overview_label_nas_name, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_overview_label_nas_name, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-    //Write codes screen_overview_img_nas_status
-    ui->screen_overview_img_nas_status = lv_img_create(ui->screen_overview);
-    lv_obj_add_flag(ui->screen_overview_img_nas_status, LV_OBJ_FLAG_CLICKABLE);
-    lv_img_set_src(ui->screen_overview_img_nas_status, &_offline_alpha_15x15);
-    lv_img_set_pivot(ui->screen_overview_img_nas_status, 50,50);
-    lv_img_set_angle(ui->screen_overview_img_nas_status, 0);
-    lv_obj_set_pos(ui->screen_overview_img_nas_status, 11, 119);
-    lv_obj_set_size(ui->screen_overview_img_nas_status, 15, 15);
-
-    //Write style for screen_overview_img_nas_status, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_img_recolor_opa(ui->screen_overview_img_nas_status, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_img_opa(ui->screen_overview_img_nas_status, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_overview_img_nas_status, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_clip_corner(ui->screen_overview_img_nas_status, true, LV_PART_MAIN|LV_STATE_DEFAULT);
-
     //Write codes screen_overview_label_nas_state
     ui->screen_overview_label_nas_state = lv_label_create(ui->screen_overview);
     lv_label_set_text(ui->screen_overview_label_nas_state, "Offline");
@@ -699,6 +684,13 @@ void setup_scr_screen_overview(lv_ui *ui)
     lv_obj_set_style_pad_bottom(ui->screen_overview_label_indicator5, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui->screen_overview_label_indicator5, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(ui->screen_overview_label_indicator5, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+    //Write codes screen_overview_led_nas_status
+    ui->screen_overview_led_nas_status = lv_led_create(ui->screen_overview);
+    lv_led_set_brightness(ui->screen_overview_led_nas_status, 255);
+    lv_led_set_color(ui->screen_overview_led_nas_status, lv_color_hex(0x2FDA64));
+    lv_obj_set_pos(ui->screen_overview_led_nas_status, 12, 121);
+    lv_obj_set_size(ui->screen_overview_led_nas_status, 10, 10);
 
     //The custom code of screen_overview.
 

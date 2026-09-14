@@ -221,7 +221,7 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     //Write codes screen_sys_info_label_os_val
     ui->screen_sys_info_label_os_val = lv_label_create(ui->screen_sys_info_cont_INFO);
     lv_label_set_text(ui->screen_sys_info_label_os_val, "Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-124-generic x86_64)");
-    lv_label_set_long_mode(ui->screen_sys_info_label_os_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_sys_info_label_os_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_sys_info_label_os_val, 72, 40);
     lv_obj_set_size(ui->screen_sys_info_label_os_val, 130, 17);
 
@@ -267,7 +267,7 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     //Write codes screen_sys_info_label_cpu_val
     ui->screen_sys_info_label_cpu_val = lv_label_create(ui->screen_sys_info_cont_INFO);
     lv_label_set_text(ui->screen_sys_info_label_cpu_val, "Intel J1900@1.99GHz");
-    lv_label_set_long_mode(ui->screen_sys_info_label_cpu_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_sys_info_label_cpu_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_sys_info_label_cpu_val, 72, 70);
     lv_obj_set_size(ui->screen_sys_info_label_cpu_val, 130, 17);
 
@@ -313,7 +313,7 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     //Write codes screen_sys_info_label_mem_val
     ui->screen_sys_info_label_mem_val = lv_label_create(ui->screen_sys_info_cont_INFO);
     lv_label_set_text(ui->screen_sys_info_label_mem_val, "8G DDR3@1600MHz");
-    lv_label_set_long_mode(ui->screen_sys_info_label_mem_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_sys_info_label_mem_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_sys_info_label_mem_val, 72, 96);
     lv_obj_set_size(ui->screen_sys_info_label_mem_val, 130, 17);
 
@@ -551,7 +551,7 @@ void setup_scr_screen_sys_info(lv_ui *ui)
     //Write style for screen_sys_info_label_cpu_temp_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_sys_info_label_cpu_temp_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_sys_info_label_cpu_temp_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(ui->screen_sys_info_label_cpu_temp_val, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui->screen_sys_info_label_cpu_temp_val, lv_color_hex(0x2FDA64), LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui->screen_sys_info_label_cpu_temp_val, &lv_font_Inter_Bold_16, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_sys_info_label_cpu_temp_val, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_sys_info_label_cpu_temp_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

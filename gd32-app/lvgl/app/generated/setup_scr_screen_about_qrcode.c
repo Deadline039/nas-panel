@@ -175,7 +175,7 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     //Write codes screen_about_qrcode_label_fw_ver_val
     ui->screen_about_qrcode_label_fw_ver_val = lv_label_create(ui->screen_about_qrcode_cont_ABOUT);
     lv_label_set_text(ui->screen_about_qrcode_label_fw_ver_val, "v1.0");
-    lv_label_set_long_mode(ui->screen_about_qrcode_label_fw_ver_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_about_qrcode_label_fw_ver_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_about_qrcode_label_fw_ver_val, 114, 13);
     lv_obj_set_size(ui->screen_about_qrcode_label_fw_ver_val, 80, 17);
 
@@ -221,7 +221,7 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     //Write codes screen_about_qrcode_label_build_time_val
     ui->screen_about_qrcode_label_build_time_val = lv_label_create(ui->screen_about_qrcode_cont_ABOUT);
     lv_label_set_text(ui->screen_about_qrcode_label_build_time_val, "June 20, 2026 14:42:21");
-    lv_label_set_long_mode(ui->screen_about_qrcode_label_build_time_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_about_qrcode_label_build_time_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_about_qrcode_label_build_time_val, 114, 39);
     lv_obj_set_size(ui->screen_about_qrcode_label_build_time_val, 80, 17);
 
@@ -267,7 +267,7 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     //Write codes screen_about_qrcode_label_upper_ver_val
     ui->screen_about_qrcode_label_upper_ver_val = lv_label_create(ui->screen_about_qrcode_cont_ABOUT);
     lv_label_set_text(ui->screen_about_qrcode_label_upper_ver_val, "v1.0");
-    lv_label_set_long_mode(ui->screen_about_qrcode_label_upper_ver_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_about_qrcode_label_upper_ver_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_about_qrcode_label_upper_ver_val, 114, 67);
     lv_obj_set_size(ui->screen_about_qrcode_label_upper_ver_val, 80, 17);
 
@@ -313,7 +313,7 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     //Write codes screen_about_qrcode_label_LICENSE_INFO
     ui->screen_about_qrcode_label_LICENSE_INFO = lv_label_create(ui->screen_about_qrcode_cont_ABOUT);
     lv_label_set_text(ui->screen_about_qrcode_label_LICENSE_INFO, "MIT License Copyright (c) Deadline039");
-    lv_label_set_long_mode(ui->screen_about_qrcode_label_LICENSE_INFO, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_about_qrcode_label_LICENSE_INFO, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_about_qrcode_label_LICENSE_INFO, 114, 95);
     lv_obj_set_size(ui->screen_about_qrcode_label_LICENSE_INFO, 80, 17);
 
@@ -389,7 +389,7 @@ void setup_scr_screen_about_qrcode(lv_ui *ui)
     //Write codes screen_about_qrcode_label_qrcode_val
     ui->screen_about_qrcode_label_qrcode_val = lv_label_create(ui->screen_about_qrcode);
     lv_label_set_text(ui->screen_about_qrcode_label_qrcode_val, "https://github.com/Deadline039/nas-panel");
-    lv_label_set_long_mode(ui->screen_about_qrcode_label_qrcode_val, LV_LABEL_LONG_SCROLL);
+    lv_label_set_long_mode(ui->screen_about_qrcode_label_qrcode_val, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_pos(ui->screen_about_qrcode_label_qrcode_val, 232, 25);
     lv_obj_set_size(ui->screen_about_qrcode_label_qrcode_val, 180, 17);
 
