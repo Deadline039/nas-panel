@@ -103,6 +103,12 @@ typedef struct __attribute__((packed)) {
 extern usb_data_report_t g_usb_data_report;
 extern usb_data_resp_t g_usb_data_resp;
 
+/**
+ * @brief Check whether the host service has replied recently.
+ * @return True while USB is configured and replies are not timed out.
+ */
+bool usb_data_is_available(void);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

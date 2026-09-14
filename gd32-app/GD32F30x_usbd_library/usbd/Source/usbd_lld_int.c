@@ -40,6 +40,8 @@ OF SUCH DAMAGE.
 /* local function prototypes ('static') */
 static void usbd_int_suspend(usb_dev *udev);
 
+#define USBD_ISR_MAX_TRANSFERS 16U
+
 /*!
     \brief      handle USB high priority successful transfer event
     \param[in]  none
@@ -156,14 +158,17 @@ void usbd_isr(void)
     __IO uint16_t int_status = (uint16_t)USBD_INTF;
     __IO uint16_t int_flag = (uint16_t)(USBD_INTF & USBD_INTEN);
     uint16_t ctl_reg = (uint16_t)(USBD_CTL);
+    uint8_t transfer_count = 0U;
 
     int_flag &= ctl_reg;
 
     usb_dev *udev = usbd_core.dev;
 
-    if(INTF_STIF & int_flag) {
+    if (INTF_STIF & int_flag) {
         /* wait till interrupts are not pending */
-        while((int_status = (uint16_t)USBD_INTF) & (uint16_t)INTF_STIF) {
+        while (((int_status = (uint16_t)USBD_INTF) & (uint16_t)INTF_STIF) &&
+               (transfer_count < USBD_ISR_MAX_TRANSFERS)) {
+            transfer_count++;
             /* get endpoint number */
             uint8_t ep_num = (uint8_t)(int_status & INTF_EPNUM);
 
@@ -217,9 +222,11 @@ void usbd_isr(void)
         }
     }
 
-    if(INTF_WKUPIF & int_flag) {
+    if (INTF_WKUPIF & int_flag) {
         /* clear wakeup interrupt flag in INTF */
         CLR(WKUPIF);
+
+        USBD_CTL |= CTL_STIE;
 
         /* restore the old cur_status */
         udev->cur_status = udev->backup_status;
@@ -282,10 +289,11 @@ void usbd_isr(void)
         }
     }
 
-    if(INTF_RSTIF & int_flag) {
+    if (INTF_RSTIF & int_flag) {
         /* clear reset interrupt flag in INTF */
         CLR(RSTIF);
 
+        USBD_CTL |= CTL_STIE;
         udev->drv_handler->ep_reset(udev);
     }
 
@@ -314,6 +322,8 @@ void usbd_isr(void)
 */
 static void usbd_int_suspend(usb_dev *udev)
 {
+    USBD_CTL &= ~CTL_STIE;
+
     /* store the device current status */
     udev->backup_status = udev->cur_status;
 

@@ -39,6 +39,8 @@ __NO_RETURN static void fan_ctrl_task(void *args)
     (void)args;
     TickType_t wake_tick = xTaskGetTickCount();
     while (1) {
+        fan_cpu_set(fan_ctrl_percent(g_usb_data_resp.cpu_temperature));
+        fan_hdd_set(fan_ctrl_percent(g_usb_data_resp.hdd_temperature));
         vTaskDelayUntil(&wake_tick, FAN_CONTROL_PERIOD_MS);
     }
 }

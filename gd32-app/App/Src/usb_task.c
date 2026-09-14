@@ -15,126 +15,62 @@
 
 #include <custom.h>
 
-#define REPORT_REQUEST_PERIOD_MS   pdMS_TO_TICKS(1000U)
-#define REPORT_RESPONSE_TIMEOUT_MS pdMS_TO_TICKS(1000U)
-#define POWER_SAMPLE_PERIOD_MS     pdMS_TO_TICKS(100U)
+#define REPORT_REQUEST_PERIOD_MS  pdMS_TO_TICKS(1000U)
+#define REPORT_OFFLINE_TIMEOUT_MS pdMS_TO_TICKS(1500U)
+#define POWER_SAMPLE_PERIOD_MS    pdMS_TO_TICKS(100U)
 
 usb_dev usbd_custom_hid;
 TaskHandle_t usb_task_handle;
+static TickType_t last_valid_response_tick;
 
 static uint8_t calc_crc8(uint8_t *p, uint8_t len);
 
-#if 0
 /**
- * @brief Validate reply identity, size, and values before updating the snapshot.
- * @param frame Complete reply.
- * @param page Requested page.
- * @param item_idx Requested item index.
- * @param sequence Request sequence number.
- * @param data Snapshot to update.
- * @return True on success, or false for an invalid reply.
+ * @brief Check whether the host service has replied recently.
+ * @return True while USB is configured and replies are not timed out.
  */
-bool usb_data_accept_response(const usb_data_frame_t *frame, uint8_t page,
-                           uint8_t item_idx, uint32_t sequence, usb_data_shared_t *data)
+bool usb_data_is_available(void)
 {
-    if (frame == NULL || data == NULL || page >= UDATA_PAGE_COUNT) {
+    if (usbd_custom_hid.cur_status != USBD_CONFIGURED) {
         return false;
     }
-    if (frame->version != UDATA_PROTOCOL_VERSION || frame->type != UDATA_RESPONSE ||
-        frame->reserved != 0 || frame->page != page || frame->sequence != sequence ||
-        frame->length != usb_data_response_size(page)) {
-        return false;
-    }
-    const usb_data_resp_t *reply = (const void *)frame->payload;
-    void *response = usb_data_response_data(data, page);
-    if (response == NULL || reply->page != page) {
-        return false;
-    }
-    switch (page) {
-        case UDATA_PAGE_OVERVIEW: {
-            const usb_data_overview_t *value = (const void *)reply->data;
-            if (value->cpu_load > 100 || value->mem_load > 100) {
-                return false;
-            }
-            break;
-        }
-        case UDATA_PAGE_NETWORK: {
-            const usb_data_network_t *value = (const void *)reply->data;
-            if (value->idx != item_idx) {
-                return false;
-            }
-            if (value->status > NETWORK_CONNECTED) {
-                return false;
-            }
-            /* Check raw bits so fast-math cannot discard NaN and infinity validation. */
-            for (size_t offset = 17; offset < 33; offset += sizeof(uint32_t)) {
-                uint32_t bits;
-                memcpy(&bits, frame->payload + offset, sizeof(bits));
-                if ((bits & 0x7f800000U) == 0x7f800000U || (bits & 0x80000000U) != 0) {
-                    return false;
-                }
-            }
-            break;
-        }
-        case UDATA_PAGE_STORAGE: {
-            const usb_data_disk_t *value = (const void *)reply->data;
-            if (value->used > 100 || value->status > DISK_STATUS_ERROR ||
-                value->idx != item_idx) {
-                return false;
-            }
-            break;
-        }
-        case UDATA_PAGE_SYS_INFO: {
-            break;
-        }
-        case UDATA_PAGE_SERVER_INFO: {
-            const usb_data_about_qrcode_t *value = (const void *)reply->data;
-            if (value->idx != item_idx) {
-                return false;
-            }
-            break;
-        }
-        default:
-            return false;
-    }
-    memcpy(response, reply->data, usb_data_response_size(page) - sizeof(usb_data_resp_t));
-    data->reply = *reply;
-    data->valid[page] = true;
-    data->online = true;
-    return true;
+    return xTaskGetTickCount() - last_valid_response_tick < REPORT_OFFLINE_TIMEOUT_MS;
 }
-#else
 
-void usb_data_check(usb_data_frame_t *frame, TickType_t *resp_tick, uint32_t sequence)
+/**
+ * @brief Validate and publish a USB response frame.
+ * @param frame Received response frame.
+ * @param sequence Expected request sequence.
+ * @return True when the response is valid.
+ */
+static bool usb_data_check(usb_data_frame_t *frame, uint32_t sequence)
 {
     if (frame->version > USB_DATA_PROTOCOL_VERSION) {
-        return;
+        return false;
     }
     if (frame->type != USB_DATA_TYPE_RESPONSE) {
-        return;
+        return false;
     }
     if (frame->sequence != sequence) {
-        return;
+        return false;
     }
     if (frame->length > sizeof(frame->payload)) {
-        return;
+        return false;
     }
     if (calc_crc8(frame->payload, frame->length) != frame->crc8) {
-        return;
+        return false;
     }
 
     usb_data_resp_t *resp = (usb_data_resp_t *)frame->payload;
 
     if (resp->type == 0 && resp->page_set != g_usb_data_report.page) {
-        return;
+        return false;
     }
     memcpy(&g_usb_data_resp, resp, sizeof(usb_data_resp_t));
     g_usb_data_resp.data = (void *)((uint8_t *)resp + offsetof(usb_data_resp_t, data));
 
-    *resp_tick = xTaskGetTickCount();
+    return true;
 }
-
-#endif
 
 /**
  * @brief Sample voltage, current and FAN PWM percent in the USB task.
@@ -179,8 +115,8 @@ __NO_RETURN void usb_task(void *args)
 
     TickType_t last_tick = xTaskGetTickCount();
     TickType_t last_request = xTaskGetTickCount();
-    TickType_t last_response = xTaskGetTickCount();
     TickType_t last_power_sample = xTaskGetTickCount();
+    uint8_t current_page = g_usb_data_report.page;
 
     while (1) {
         TickType_t now = xTaskGetTickCount();
@@ -202,21 +138,26 @@ __NO_RETURN void usb_task(void *args)
         taskEXIT_CRITICAL();
 
         if (received == true) {
-            usb_data_check(&rx_frame, &last_response, tx_frame.sequence);
+            bool response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
+            g_usb_data_resp.valid = response_valid;
+            if (response_valid == true) {
+                last_valid_response_tick = now;
+            }
         }
 
-        if (last_request - last_response >= REPORT_RESPONSE_TIMEOUT_MS) {
-            taskENTER_CRITICAL();
-            custom_hid_report_send(&usbd_custom_hid, (uint8_t *)&tx_frame, sizeof(tx_frame));
-            taskEXIT_CRITICAL();
-        } else if (now - last_request >= REPORT_REQUEST_PERIOD_MS) {
-            tx_frame.sequence++;
+        if (now - last_request >= REPORT_REQUEST_PERIOD_MS || current_page != g_usb_data_report.page) {
+            if (g_usb_data_resp.valid) {
+                tx_frame.sequence++;
+            }
             memcpy(tx_frame.payload, &g_usb_data_report, sizeof(g_usb_data_report));
             tx_frame.crc8 = calc_crc8(tx_frame.payload, tx_frame.length);
 
             taskENTER_CRITICAL();
             custom_hid_report_send(&usbd_custom_hid, (uint8_t *)&tx_frame, sizeof(tx_frame));
             taskEXIT_CRITICAL();
+            last_request = now;
+            current_page = g_usb_data_report.page;
+            g_usb_data_resp.valid = 0U;
         }
 
         vTaskDelayUntil(&last_tick, pdMS_TO_TICKS(10));
