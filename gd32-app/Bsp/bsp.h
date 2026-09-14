@@ -16,6 +16,7 @@
 #include "usart/usart.h"
 #include "hc595/hc595.h"
 #include "fan_pwm/fan_pwm.h"
+#include "key/key.h"
 
 #ifdef __cplusplus
 extern "C" {

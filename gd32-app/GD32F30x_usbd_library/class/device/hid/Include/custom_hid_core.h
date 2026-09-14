@@ -38,25 +38,37 @@ OF SUCH DAMAGE.
 #include "usbd_enum.h"
 #include "usb_hid.h"
 #include <stdbool.h>
-#include "usb_protocol.h"
 
-#define DESC_LEN_REPORT 26U /*!< report descriptor length */
-#define DESC_LEN_CONFIG 41U /*!< configuration descriptor length */
-
-#define MAX_PERIPH_NUM  4U /*!< maximum peripheral number */
+#define DESC_LEN_REPORT           26U  /*!< report descriptor length */
+#define DESC_LEN_CONFIG           41U  /*!< configuration descriptor length */
+#define MAX_PERIPH_NUM            4U   /*!< maximum peripheral number */
+#define USB_DATA_FRAME_SIZE       256U /*!< maximum usb frame size */
+#define USB_DATA_PROTOCOL_VERSION 4U   /*!< current frame protocol version */
 
 typedef struct {
-    uint8_t data[UDATA_FRAME_SIZE];
-    uint8_t received[UDATA_FRAME_SIZE];
-    uint8_t control[UDATA_FRAME_SIZE];
-    uint8_t transmit[UDATA_FRAME_SIZE];
+    uint8_t data[USB_DATA_FRAME_SIZE];
+    uint8_t received[USB_DATA_FRAME_SIZE];
+    uint8_t control[USB_DATA_FRAME_SIZE];
+    uint8_t transmit[USB_DATA_FRAME_SIZE];
     volatile bool tx_busy;
     volatile bool rx_ready; /*!< A complete report is waiting for the task. */
 
-    uint8_t reportID;  /*!< custom HID report id */
-    uint8_t idlestate; /*!< HID device idle state */
-    uint8_t protocol;  /*!< HID device protocol */
+    uint8_t reportID;   /*!< custom HID report id */
+    uint8_t idle_state; /*!< HID device idle state */
+    uint8_t protocol;   /*!< HID device protocol */
 } custom_hid_handler;
+
+#define USB_DATA_TYPE_REQUEST  0
+#define USB_DATA_TYPE_RESPONSE 1
+typedef struct __attribute__((packed)) {
+    uint8_t version;
+    uint8_t type;
+    uint8_t reserved[1];
+    uint32_t sequence;
+    uint16_t length;
+    uint8_t crc8;
+    uint8_t payload[246];
+} usb_data_frame_t;
 
 typedef struct {
     void (*periph_config[MAX_PERIPH_NUM])(void);
@@ -77,6 +89,6 @@ uint8_t custom_hid_report_send(usb_dev *udev, uint8_t *report, uint16_t len);
  * @param report Destination report buffer.
  * @return True if a report is available, otherwise false.
  */
-bool custom_hid_report_read(usb_dev *udev, udata_frame_t *report);
+bool custom_hid_report_read(usb_dev *udev, usb_data_frame_t *report);
 
 #endif /* CUSTOM_HID_CORE_H */

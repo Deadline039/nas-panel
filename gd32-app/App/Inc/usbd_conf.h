@@ -37,10 +37,10 @@ OF SUCH DAMAGE.
 
 #include "gd32f30x.h"
 
-#define USBD_CFG_MAX_NUM                   1U
-#define USBD_ITF_MAX_NUM                   1U
+#define USBD_CFG_MAX_NUM     1U
+#define USBD_ITF_MAX_NUM     1U
 
-#define CUSTOM_HID_INTERFACE               0U
+#define CUSTOM_HID_INTERFACE 0U
 
 /* define if low power mode is enabled; it allows entering the device into DEEP_SLEEP mode
    following USB suspend event and wakes up after the USB wakeup event is received. */
@@ -50,32 +50,32 @@ OF SUCH DAMAGE.
 /* #define USBD_SELF_POWERED */
 
 /* endpoint count used by the HID device */
-#define CUSTOMHID_IN_EP                    EP_IN(1U)
-#define CUSTOMHID_OUT_EP                   EP_OUT(1U)
+#define CUSTOMHID_IN_EP      EP_IN(1U)
+#define CUSTOMHID_OUT_EP     EP_OUT(1U)
 
-#define CUSTOMHID_IN_PACKET                2U
-#define CUSTOMHID_OUT_PACKET               2U
+#define CUSTOMHID_IN_PACKET  64U
+#define CUSTOMHID_OUT_PACKET 64U
 
 /* endpoint0, Rx/Tx buffers address offset */
-#define EP0_RX_ADDR                        (0x40U)
-#define EP0_TX_ADDR                        (0xA0U)
+#define EP0_RX_ADDR          (0x40U)
+#define EP0_TX_ADDR          (0xA0U)
 
 /* HID data Tx buffer address offset */
-#define HID_TX_ADDR                        (0x140U)
+#define HID_TX_ADDR          (0x140U)
 
 /* HID data Rx buffer address offset */
-#define HID_RX_ADDR                        (0x100U)
+#define HID_RX_ADDR          (0x100U)
 
 /* endpoint count used by the HID device */
-#define EP_COUNT                           (4U)
+#define EP_COUNT             (4U)
 
-#define USB_STRING_COUNT                   4U
+#define USB_STRING_COUNT     4U
 
 /* base address offset of the allocation buffer, used for buffer descriptor table and packet memory */
-#define BTABLE_OFFSET                      (0x0000U)
+#define BTABLE_OFFSET        (0x0000U)
 
-#define USB_PULLUP                         GPIOA
-#define USB_PULLUP_PIN                     GPIO_PIN_8
-#define RCU_PULLUP                         RCU_GPIOA
+#define USB_PULLUP           GPIOA
+#define USB_PULLUP_PIN       GPIO_PIN_8
+#define RCU_PULLUP           RCU_GPIOA
 
 #endif /* USBD_CONF_H */

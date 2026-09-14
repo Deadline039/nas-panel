@@ -191,7 +191,7 @@ uint8_t custom_hid_report_send(usb_dev *udev, uint8_t *report, uint16_t len)
 {
     custom_hid_handler *hid = udev->class_data[CUSTOM_HID_INTERFACE];
     if (udev->cur_status != USBD_CONFIGURED || hid == NULL || report == NULL ||
-        len != UDATA_FRAME_SIZE || hid->tx_busy == true) {
+        len != USB_DATA_FRAME_SIZE || hid->tx_busy == true) {
         return USBD_FAIL;
     }
     memcpy(hid->transmit, report, len);
@@ -216,7 +216,7 @@ static uint8_t custom_hid_init(usb_dev *udev, uint8_t config_index)
     usbd_ep_init(udev, EP_BUF_SNG, HID_TX_ADDR, &(custom_hid_config_desc.hid_epin));
     usbd_ep_init(udev, EP_BUF_SNG, HID_RX_ADDR, &(custom_hid_config_desc.hid_epout));
 
-    usbd_ep_recev(udev, CUSTOMHID_OUT_EP, hid_handler.data, UDATA_FRAME_SIZE);
+    usbd_ep_recev(udev, CUSTOMHID_OUT_EP, hid_handler.data, USB_DATA_FRAME_SIZE);
 
     udev->ep_transc[EP_ID(CUSTOMHID_IN_EP)][TRANSC_IN] = custom_hid_class.data_in;
     udev->ep_transc[EP_ID(CUSTOMHID_OUT_EP)][TRANSC_OUT] = custom_hid_class.data_out;
@@ -283,19 +283,19 @@ static uint8_t custom_hid_req_handler(usb_dev *udev, usb_req *req)
         return REQ_NOTSUPP;
     }
     if (req->bRequest == SET_REPORT && req->bmRequestType == 0x21U &&
-        req->wValue == 0x0200U && req->wLength == UDATA_FRAME_SIZE) {
+        req->wValue == 0x0200U && req->wLength == USB_DATA_FRAME_SIZE) {
         /* Some hosts send output reports over EP0; use a separate bounded buffer. */
-        usb_transc_config(&udev->transc_out[0], hid->control, UDATA_FRAME_SIZE, 0U);
+        usb_transc_config(&udev->transc_out[0], hid->control, USB_DATA_FRAME_SIZE, 0U);
         return REQ_SUPP;
     }
     if (req->bRequest == GET_IDLE && req->bmRequestType == 0xa1U &&
         req->wLength == 1U && req->wValue == 0U) {
-        usb_transc_config(&udev->transc_in[0], &hid->idlestate, 1U, 0U);
+        usb_transc_config(&udev->transc_in[0], &hid->idle_state, 1U, 0U);
         return REQ_SUPP;
     }
     if (req->bRequest == SET_IDLE && req->bmRequestType == 0x21U &&
         req->wLength == 0U && (req->wValue & 0xffU) == 0U) {
-        hid->idlestate = (uint8_t)(req->wValue >> 8);
+        hid->idle_state = (uint8_t)(req->wValue >> 8);
         return REQ_SUPP;
     }
     return REQ_NOTSUPP;
@@ -325,11 +325,11 @@ static void custom_hid_data_out(usb_dev *udev, uint8_t ep_num)
     if (ep_num != EP_ID(CUSTOMHID_OUT_EP) || hid == NULL) {
         return;
     }
-    if (udev->transc_out[ep_num].xfer_count == UDATA_FRAME_SIZE && hid->rx_ready == false) {
-        memcpy(hid->received, hid->data, UDATA_FRAME_SIZE);
+    if (udev->transc_out[ep_num].xfer_count == USB_DATA_FRAME_SIZE && hid->rx_ready == false) {
+        memcpy(hid->received, hid->data, USB_DATA_FRAME_SIZE);
         hid->rx_ready = true;
     }
-    usbd_ep_recev(udev, CUSTOMHID_OUT_EP, hid->data, UDATA_FRAME_SIZE);
+    usbd_ep_recev(udev, CUSTOMHID_OUT_EP, hid->data, USB_DATA_FRAME_SIZE);
 }
 
 /**
@@ -338,13 +338,13 @@ static void custom_hid_data_out(usb_dev *udev, uint8_t ep_num)
  * @param report Destination report buffer.
  * @return True if a report was read, otherwise false.
  */
-bool custom_hid_report_read(usb_dev *udev, udata_frame_t *report)
+bool custom_hid_report_read(usb_dev *udev, usb_data_frame_t *report)
 {
     custom_hid_handler *hid = udev->class_data[CUSTOM_HID_INTERFACE];
     if (udev->cur_status != USBD_CONFIGURED || hid == NULL || report == NULL || hid->rx_ready == false) {
         return false;
     }
-    memcpy(report, hid->received, UDATA_FRAME_SIZE);
+    memcpy(report, hid->received, USB_DATA_FRAME_SIZE);
     hid->rx_ready = false;
     return true;
 }
@@ -360,12 +360,12 @@ static uint8_t custom_hid_control_out(usb_dev *udev)
     const usb_req *req = &udev->control.req;
     if (hid == NULL || udev->control.ctl_state != USBD_CTL_DATA_OUT ||
         req->bRequest != SET_REPORT || req->bmRequestType != 0x21U ||
-        req->wValue != 0x0200U || req->wLength != UDATA_FRAME_SIZE ||
-        udev->transc_out[0].xfer_count != UDATA_FRAME_SIZE) {
+        req->wValue != 0x0200U || req->wLength != USB_DATA_FRAME_SIZE ||
+        udev->transc_out[0].xfer_count != USB_DATA_FRAME_SIZE) {
         return USBD_FAIL;
     }
     if (hid->rx_ready == false) {
-        memcpy(hid->received, hid->control, UDATA_FRAME_SIZE);
+        memcpy(hid->received, hid->control, USB_DATA_FRAME_SIZE);
         hid->rx_ready = true;
     }
     return USBD_OK;
