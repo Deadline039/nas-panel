@@ -82,5 +82,5 @@ void usb_gpio_config(void)
 */
 void usb_nvic_config(void)
 {
-    nvic_irq_enable(USBD_LP_CAN0_RX0_IRQn, 2U, 0U);
+    nvic_irq_enable(USBD_LP_CAN0_RX0_IRQn, 5U, 0U);
 }
