@@ -15,8 +15,11 @@ extern "C" {
 
 void fan_pwm_init(void);
 
-void fan_hdd_set(uint32_t precent);
-void fan_cpu_set(uint32_t precent);
+void fan_hdd_set(uint8_t percent);
+void fan_cpu_set(uint8_t percent);
+
+uint8_t fan_cpu_get_percent(void);
+uint8_t fan_hdd_get_percent(void);
 
 #ifdef __cplusplus
 }

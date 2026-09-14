@@ -10,6 +10,12 @@
 #include <gd32f30x_gpio.h>
 #include <gd32f30x_timer.h>
 
+static volatile uint8_t cpu_percent;
+static volatile uint8_t hdd_percent;
+
+/**
+ * @brief Initialize the local CPU and disk fan PWM outputs.
+ */
 void fan_pwm_init(void)
 {
     timer_oc_parameter_struct timer_ocintpara;
@@ -50,12 +56,46 @@ void fan_pwm_init(void)
     timer_enable(TIMER3);
 }
 
-void fan_hdd_set(uint32_t precent)
+/**
+ * @brief Set the disk fan PWM duty cycle.
+ * @param percent Requested duty cycle percentage.
+ */
+void fan_hdd_set(uint8_t percent)
 {
-    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_2, precent);
+    if (percent > 100U) {
+        percent = 100U;
+    }
+    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_2, (uint32_t)percent);
+    hdd_percent = percent;
 }
 
-void fan_cpu_set(uint32_t precent)
+/**
+ * @brief Set the CPU fan PWM duty cycle.
+ * @param percent Requested duty cycle percentage.
+ */
+void fan_cpu_set(uint8_t percent)
 {
-    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_3, precent);
+    if (percent > 100U) {
+        percent = 100U;
+    }
+    timer_channel_output_pulse_value_config(TIMER3, TIMER_CH_3, (uint32_t)percent);
+    cpu_percent = percent;
+}
+
+/**
+ * @brief Read the CPU fan PWM percentage currently applied to the timer.
+ * @return PWM percentage from 0 to 100.
+ */
+uint8_t fan_cpu_get_percent(void)
+{
+    return cpu_percent;
+}
+
+/**
+ * @brief Read the disk fan PWM percentage currently applied to the timer.
+ * @return PWM percentage from 0 to 100.
+ */
+uint8_t fan_hdd_get_percent(void)
+{
+    return hdd_percent;
 }
