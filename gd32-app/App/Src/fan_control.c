@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2026, Deadline039
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "fan_control.h"
 
 #include <FreeRTOS.h>
