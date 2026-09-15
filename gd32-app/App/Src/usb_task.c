@@ -140,16 +140,14 @@ __NO_RETURN void usb_task(void *args)
 
         if (received == true) {
             bool response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
-            g_usb_data_resp.valid = response_valid;
             if (response_valid == true) {
+                g_usb_data_resp.valid = 1U;
                 last_valid_response_tick = now;
+                tx_frame.sequence++;
             }
         }
 
         if (now - last_request >= REPORT_REQUEST_PERIOD_MS || current_page != g_usb_data_report.page) {
-            if (g_usb_data_resp.valid) {
-                tx_frame.sequence++;
-            }
             memcpy(tx_frame.payload, &g_usb_data_report, sizeof(g_usb_data_report));
             tx_frame.crc8 = calc_crc8(tx_frame.payload, tx_frame.length);
 
@@ -158,7 +156,6 @@ __NO_RETURN void usb_task(void *args)
             taskEXIT_CRITICAL();
             last_request = now;
             current_page = g_usb_data_report.page;
-            g_usb_data_resp.valid = 0U;
         }
 
         vTaskDelayUntil(&last_tick, pdMS_TO_TICKS(10));
