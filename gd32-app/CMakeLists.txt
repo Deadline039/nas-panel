@@ -32,6 +32,20 @@ set(CMAKE_C_STANDARD 23)
 cmake_minimum_required(VERSION 3.20)
 project(nas-panel C CXX ASM)
 
+find_package(Git QUIET)
+set(BUILD_HASH "unknown")
+if (GIT_FOUND)
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse --short=8 HEAD
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE BUILD_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+    )
+endif ()
+message(STATUS "Build hash: ${BUILD_HASH}")
+add_compile_definitions(BUILD_HASH="${BUILD_HASH}")
+
 add_compile_options(
         -mcpu=cortex-m4
         -mfpu=fpv4-sp-d16

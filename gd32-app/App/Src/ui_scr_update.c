@@ -21,6 +21,12 @@ extern lv_ui guider_ui;
 #define UI_COLOR_YELLOW 0xffc107U
 #define UI_COLOR_RED    0xff4040U
 
+#define FW_VERSION      "v0.1"
+
+#ifndef BUILD_HASH
+#define BUILD_HASH ""
+#endif /* BUILD_HASH */
+
 static uint32_t ui_runtime_value(uint32_t minutes, char *unit);
 static double ui_storage_value(double kilobytes, uint8_t *unit);
 static uint32_t ui_usage_color(uint8_t percent);
@@ -70,12 +76,6 @@ void update_scr_loading(uint8_t page)
             lv_label_set_text(guider_ui.screen_sys_info_label_hdd_fan, "--");
             lv_bar_set_value(guider_ui.screen_sys_info_bar_cpu_fan, 0, LV_ANIM_OFF);
             lv_bar_set_value(guider_ui.screen_sys_info_bar_hdd_fan, 0, LV_ANIM_OFF);
-            break;
-        case LV_SCREEN_ABOUT_QRCODE:
-            lv_label_set_text(guider_ui.screen_about_qrcode_label_upper_ver_val, "--");
-            lv_label_set_text(guider_ui.screen_about_qrcode_label_qrcode_val, "--");
-            lv_label_set_text(guider_ui.screen_about_qrcode_label_qr_code_info, "GETTING DATA");
-            lv_obj_add_flag(guider_ui.screen_about_qrcode_qrcode_1, LV_OBJ_FLAG_HIDDEN);
             break;
         default:
             break;
@@ -249,10 +249,24 @@ void update_scr_storage(void)
 }
 
 /**
+ * 
  * @brief Refresh the server version and QR link with bounded string reads.
  */
 void update_scr_about_qrcode(void)
 {
+    lv_label_set_text_fmt(guider_ui.screen_about_qrcode_label_fw_ver_val, "%s-%s",
+                          FW_VERSION, BUILD_HASH);
+    lv_label_set_text(guider_ui.screen_about_qrcode_label_build_time_val,
+                      __DATE__ " " __TIME__);
+
+    if (g_usb_data_resp.valid == 0U || g_usb_data_resp.data == NULL) {
+        lv_label_set_text(guider_ui.screen_about_qrcode_label_upper_ver_val, "--");
+        lv_label_set_text(guider_ui.screen_about_qrcode_label_qrcode_val, "--");
+        lv_label_set_text(guider_ui.screen_about_qrcode_label_qr_code_info, "GETTING DATA");
+        lv_obj_add_flag(guider_ui.screen_about_qrcode_qrcode_1, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     const usb_data_about_qrcode_t *data = g_usb_data_resp.data;
     if (data->total == 0U || data->idx != g_usb_data_report.item_idx) {
         lv_label_set_text(guider_ui.screen_about_qrcode_label_upper_ver_val, "--");

@@ -212,7 +212,8 @@ static void update_ui(void)
     }
     last_refresh = now;
 
-    if (page != LV_SCREEN_OVERVIEW && g_usb_data_resp.valid == 0U) {
+    if (page != LV_SCREEN_OVERVIEW && page != LV_SCREEN_ABOUT_QRCODE &&
+        g_usb_data_resp.valid == 0U) {
         update_scr_loading(page);
         return;
     }
