@@ -14,13 +14,18 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define NETWORK_DISCONNECTED    0U
-#define NETWORK_GETTING_ADDRESS 1U
-#define NETWORK_CONNECTED       2U
+#define NETWORK_DISCONNECTED        0U
+#define NETWORK_GETTING_ADDRESS     1U
+#define NETWORK_CONNECTED           2U
 
-#define DISK_STATUS_OK          0
-#define DISK_STATUS_WARNING     1
-#define DISK_STATUS_ERROR       2
+#define DISK_STATUS_OK              0
+#define DISK_STATUS_WARNING         1
+#define DISK_STATUS_ERROR           2
+
+#define USB_DATA_RESPONSE_PAGE      0U
+#define USB_DATA_RESPONSE_SETTING   1U
+
+#define USB_DATA_SETTING_FAN_CURVES 0U
 
 typedef struct __attribute__((packed)) {
     uint8_t page;          /**< which page is in shown? */
@@ -32,7 +37,7 @@ typedef struct __attribute__((packed)) {
 } usb_data_report_t;
 
 typedef struct __attribute__((packed)) {
-    /**< frame type, 0:page data, 1:setting */
+    /**< frame type, see USB_DATA_RESPONSE_xxx */
     uint8_t type;
     /**<
      * frame valid flag, 0:invalid, 1: valid
@@ -96,7 +101,7 @@ typedef struct __attribute__((packed)) {
     uint8_t total;
 
     char web_addr[50];
-    char server_version[10];
+    char server_version[30];
 } usb_data_about_qrcode_t;
 
 /* `page` and `item_idx` set by UI */

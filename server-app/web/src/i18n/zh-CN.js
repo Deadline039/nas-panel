@@ -1,0 +1,16 @@
+export default {
+    overview: '概览', network: '网络', storage: '存储', system: '系统', fans: '风扇', about: '关于', settings: '设置',
+    overviewDesc: 'NAS 与前面板的实时运行状态', networkDesc: '物理网卡、地址与流量', storageDesc: '物理硬盘容量、健康和温度', systemDesc: '主机硬件与操作系统信息', fansDesc: '设置 CPU 和硬盘风扇温控曲线', aboutDesc: '服务版本、面板连接和访问地址', settingsDesc: '服务、反向代理与二维码配置',
+    panelOnline: '面板在线', waitingPanel: '等待面板', lastUpdate: '最后更新', neverReceived: '尚未收到数据', connectionError: '无法连接服务：{message}',
+    runtime: '运行时间', cpuLoad: 'CPU 负载', memoryLoad: '内存负载', cpuTemperature: 'CPU 温度', diskTemperature: '硬盘温度', physicalDisks: '{count} 块物理硬盘',
+    panelTelemetry: '前面板数据', voltage: '电压', current: '电流', power: '功率', cpuFan: 'CPU 风扇', hddFan: '硬盘风扇', responses: '已回复 {count} 个数据包',
+    interface: '接口', physicalInterfaces: '{count} 个物理网卡', state: '状态', address: '地址', netmask: '子网掩码', gateway: '网关', upload: '上传', download: '下载', totalTraffic: '累计流量', noNetwork: '没有可显示的物理网卡', disconnected: '未连接', acquiring: '获取地址中', connected: '已连接', unknown: '未知',
+    device: '设备', mountpoint: '挂载点', capacity: '容量', usage: '占用', used: '已使用', health: '健康', temperature: '温度', powerOnHours: '通电时间', cycles: '通电次数', hours: '{count} 小时', cycleCount: '{count} 次', noStorage: '没有可显示的物理硬盘', diskGood: '良好', diskWarning: '警告', diskFailure: '故障',
+    fanCurve: '风扇温控曲线', fanCurveHint: '每个点对应 5℃ 温度区间，拖动曲线或输入数值设置 PWM。', saveAndSend: '保存并发送', waitingDelivery: '等待面板确认',
+    hostName: '主机名', operatingSystem: '操作系统', processor: '处理器', memory: '内存', serverBuild: '服务构建', version: '版本', commit: 'Commit',
+    panelConnection: '面板连接', product: '产品', serial: '序列号', transferState: '传输状态', normal: '传输正常', connecting: '正在连接', latestPage: '最近请求页面', itemIndex: '条目索引',
+    accessAddresses: '设置页面地址', accessHint: '这些地址会作为 About 页二维码发送给 GD32。', automatic: '自动', custom: '自定义', noAddresses: '当前没有可用地址',
+    save: '保存设置', saving: '保存中…', saved: '已保存', listenAddress: '监听地址', restartRequired: '修改后重启服务生效', panelSerial: '面板序列号', autoSelect: '留空自动选择', serialHint: '多块面板时指定，重启后生效', serverVersion: '服务版本', publicScheme: '公开协议', schemeHint: '反向代理对外使用的协议', publicPort: '公开端口', portHint: '写入二维码的访问端口', proxyPath: '反代路径', proxyHint: '留空表示部署在根路径', automaticAddresses: '自动生成的设置地址', automaticHint: '根据物理网卡 IPv4、公开端口和反代路径生成。', extraLinks: '额外二维码链接', extraHint: '排在自动地址之后，由实体按键切换。', addLink: '添加链接', linkName: '名称', linkURL: '链接地址', removeLink: '删除链接', noLinks: '没有额外二维码链接',
+    bootEnergy: '当前开机耗电', totalEnergy: '累计总耗电', energyUnit: '度',
+    language: '语言', theme: '主题', lightTheme: '浅色', darkTheme: '深色', page: '页面',
+}

@@ -15,6 +15,9 @@ VERSION = 4
 FRAME_REQUEST = 0
 FRAME_RESPONSE = 1
 RESPONSE_PAGE_DATA = 0
+RESPONSE_SETTING = 1
+SETTING_FAN_CURVES = 0
+FAN_CURVE = bytes((0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100))
 
 HEADER = struct.Struct("<BBBIHB")
 REQUEST = struct.Struct("<BffBBB")
@@ -24,7 +27,7 @@ PAGE_DATA = (
     struct.Struct("<BBB12sffff16s16s16s"),
     struct.Struct("<BB12sQBBBII"),
     struct.Struct("<12s80s50s50s"),
-    struct.Struct("<BB50s10s"),
+    struct.Struct("<BB50s30s"),
 )
 PAGE_NAMES = ("overview", "network", "storage", "system", "qrcode")
 
@@ -124,7 +127,7 @@ def make_page_data(page, sample, index):
         )
     if page == 4:
         links = (b"https://example.com/nas", b"https://github.com/Deadline039/nas-panel")
-        return PAGE_DATA[page].pack(index, len(links), links[index], b"mock-1.0")
+        return PAGE_DATA[page].pack(index, len(links), links[index], b"v0.1.0(12345678)")
     raise ValueError(f"unknown page {page}")
 
 
@@ -139,9 +142,16 @@ def make_response(raw, sample):
     return make_frame(FRAME_RESPONSE, sequence, payload)
 
 
+def make_fan_setting(sequence):
+    """Build the raw CPU and HDD fan-curve setting response."""
+    payload = RESPONSE.pack(RESPONSE_SETTING, 1, SETTING_FAN_CURVES, 35, 40)
+    payload += FAN_CURVE + FAN_CURVE
+    return make_frame(FRAME_RESPONSE, sequence, payload)
+
+
 def self_check():
     """Check every request and response layout without opening a HID device."""
-    expected_sizes = (11, 84, 38, 197, 67)
+    expected_sizes = (11, 84, 38, 197, 87)
     for page, name in enumerate(PAGE_NAMES):
         request = make_frame(
             FRAME_REQUEST, 42, REQUEST.pack(page, 12.0, 1.25, 30, 40, 0)
@@ -162,6 +172,14 @@ def self_check():
             f"{name}: request={REQUEST.size} bytes, response={header[4]} bytes, "
             f"frame={len(response)} bytes"
         )
+    setting = make_fan_setting(42)
+    header = HEADER.unpack_from(setting)
+    if header[4] != RESPONSE.size + len(FAN_CURVE) * 2:
+        raise AssertionError("fan setting payload size mismatch")
+    payload = setting[HEADER.size : HEADER.size + header[4]]
+    if crc8(payload) != header[5]:
+        raise AssertionError("fan setting CRC8 mismatch")
+    print(f"fan setting: response={header[4]} bytes, curves={len(FAN_CURVE)}+{len(FAN_CURVE)} bytes")
 
 
 def open_device(hid, serial):

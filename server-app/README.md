@@ -1,82 +1,151 @@
-# NAS 面板测试
+# NAS Panel Server
 
-测试脚本统一为 `server-app/tests/test_hid.py`。它根据 GD32 请求的页面和条目返回模拟数据，页面与设备切换使用面板实体按键。
+`server-app` 是 NAS Panel 的上位机服务，由 Go 后端和 Vue 3 前端组成。Go 服务采集 NAS 状态、响应 GD32 的 USB HID v4 请求，并提供 Web API；Vue 页面用于查看实时状态和配置 About 页二维码。
 
-## 本机运行
+## 功能
 
-在仓库根目录执行：
+- 自动连接 `3939:0831` HID 设备，可按序列号筛选。
+- 严格按照固件的 256 字节 HID v4 协议一问一答。
+- 采集运行时间、CPU、内存、物理网卡、流量和挂载磁盘信息。
+- 使用 `smartctl` 补充硬盘温度、健康状态、通电时间和通电次数；未安装时其余功能正常运行。
+- 每两秒缓存系统状态，HID 请求不等待耗时的系统命令。
+- Web 页面包含五个状态页面、风扇曲线页面和设置页面，支持中英文及深浅色主题。
+- Web 端可编辑 CPU/HDD 独立的 20 点风扇曲线，保存后通过 HID 发给 GD32 并写入片内 Flash。
+- 根据 GD32 上报的电压和电流累计当前开机与历史总耗电，并持久化保存。
+- HID 断开后自动重连，Web 服务保持运行。
+
+## 开发环境
+
+需要 Go 1.24 或更高版本、Node.js 22.18 或更高版本，以及 C 编译器。`go-hid` 内置 HIDAPI；Linux 默认使用 hidraw 后端，并需要 libudev 开发包。
+
+Debian/Ubuntu：
 
 ```sh
-python3 -m venv server-app/.venv
-server-app/.venv/bin/python -m pip install --index-url https://pypi.org/simple -r server-app/requirements.txt
-server-app/.venv/bin/python server-app/tests/test_hid.py --list
-server-app/.venv/bin/python server-app/tests/test_hid.py --serial 676643860B34
+sudo apt install build-essential libudev-dev smartmontools
 ```
 
-先烧录配套固件并重新插拔 USB。当前为 **协议 v4**，不兼容旧版固件/测试脚本；VID/PID 仍为 `3939:0831`。只有一块面板时可省略 `--serial`。Windows 使用 `.venv\Scripts\python.exe`。
+安装依赖并构建：
 
-HID 脚本参数：`--count 10` 回复十次后退出；`--delay 1.2` 延迟回复；`--dry-run` 离线检查所有页面的数据布局和 CRC8。模拟数据包含三个网卡、三个磁盘和两个链接，由面板实体按键选择，并覆盖单位切换及温度、占用率阈值。
+```sh
+cd server-app
+npm --prefix web install
+npm --prefix web run build
+(cd internal && go mod download && go build -o ../nas-panel-server .)
+```
 
-Linux 无法打开设备时，可在 `/etc/udev/rules.d/70-nas-panel.rules` 添加桌面会话权限规则，重载规则后重新插拔设备：
+构建完成后运行：
+
+```sh
+./nas-panel-server -config config.json -web-dir web/dist -energy-file data/energy.json
+```
+
+首次启动会生成 `config.json`。浏览器访问 `http://NAS-IP:8080`。没有连接面板时，系统采集和 Web 页面仍然可用，服务会每两秒尝试重新连接 HID。
+
+耗电量以 kWh（度）保存到 `-energy-file` 指定的 JSON 文件。服务每 30 秒及正常退出时原子写入一次。当前开机耗电通过系统 boot ID 识别，因此同一次开机中重启服务不会清零，NAS 重启后才重新累计；历史总耗电持续累加。USB HID 断联期间没有新的功率采样，不会使用旧功率推算耗电。
+
+前端开发服务器：
+
+```sh
+(cd internal && go run . -config ../config.json -web-dir ../web/dist -energy-file ../data/energy.json)
+npm --prefix web run dev
+```
+
+Vite 开发服务器会把 `/api` 转发到 `localhost:8080`。
+
+Web 翻译文件位于 `web/src/i18n/`，每种语言一个文件；新增语言时添加词条文件并在 `i18n/index.js` 注册即可。
+
+## 配置
+
+```json
+{
+  "listen": ":8080",
+  "panelSerial": "676643860B34",
+  "serverVersion": "0.1.0",
+  "publicScheme": "https",
+  "publicPort": 443,
+  "basePath": "/nas-panel",
+  "links": [
+    { "name": "Project", "url": "https://github.com/Deadline039/nas-panel" }
+  ],
+  "fanCurves": {
+    "cpu": [0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100],
+    "hdd": [0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100]
+  }
+}
+```
+
+- `listen`：HTTP 监听地址，修改后重启生效。
+- `panelSerial`：留空时连接第一块匹配的面板，修改后重启服务生效。
+- `serverVersion`：最多 9 个 UTF-8 字节，与 8 位 Git hash 组成 `v0.1.0(12345678)` 后发给面板。
+- `publicScheme`、`publicPort`、`basePath`：在 `config.json` 中设置网页的公开协议、端口和反代路径。服务根据每块物理网卡的 IPv4 地址自动生成二维码，例如 `https://192.168.1.10:443/nas-panel/`。
+- `links`：可选的额外二维码，排在自动生成的设置地址之后，每个 URL 最多 49 个 UTF-8 字节。
+- `fanCurves.cpu` 和 `fanCurves.hdd`：各 20 个 0～100 的 PWM 百分比，对应 0℃ 起每 5℃ 一档，最后一档覆盖 95～100℃。
+
+前端资源使用相对路径，API 会自动带上浏览器当前访问前缀。Go 服务同时接受根路径和配置的 `basePath`，因此反向代理可以保留或剥离前缀。以下两种 Nginx 写法均可：
+
+```nginx
+# Strip /nas-panel before forwarding.
+location /nas-panel/ {
+    proxy_pass http://127.0.0.1:8080/;
+}
+
+# Preserve /nas-panel when forwarding.
+location /nas-panel/ {
+    proxy_pass http://127.0.0.1:8080;
+}
+```
+
+修改 `listen`、`panelSerial` 或 `basePath` 后需要重启服务。公开协议和端口只用于生成二维码，可以立即生效。
+
+Linux 下只展示 sysfs 识别到的物理硬盘。分区、LVM 和软件 RAID 用于计算对应物理盘的占用率，不会作为额外硬盘展示。
+
+## Linux 安装
+
+构建完整项目：
+
+```sh
+make
+```
+
+将以下内容复制到 NAS：
 
 ```text
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3939", ATTRS{idProduct}=="0831", TAG+="uaccess"
+/opt/nas-panel/nas-panel-server
+/opt/nas-panel/web/dist/
+/etc/nas-panel/config.json
 ```
 
-## 协议 v4
+创建 `nas-panel` 用户和用户组，然后安装：
 
-HID Input/Output Report 固定 **256 字节，无 Report ID**。中断端点 `0x81`/`0x01` 的最大包长为 64 字节，由 USB 驱动分成四包传输。也支持控制端点 `SET_REPORT(Output, ID=0, length=256)`。
+```text
+deploy/70-nas-panel.rules -> /etc/udev/rules.d/70-nas-panel.rules
+deploy/nas-panel.service  -> /etc/systemd/system/nas-panel.service
+```
 
-HIDAPI `write()` 需额外前置 `0x00`，参数总长 257 字节；前置字节不属于线上报告。`read(256)` 返回完整报告。
-
-| 偏移 | 长度 | 字段 | 含义 |
-| --- | --- | --- | --- |
-| 0 | 1 | version | 固定 4 |
-| 1 | 1 | type | 请求=0，回复=1 |
-| 2 | 1 | reserved | 固定 0 |
-| 3 | 4 | sequence | 请求序号，回复原样回传 |
-| 7 | 2 | length | 有效载荷长度 |
-| 9 | 1 | crc8 | 有效载荷 CRC8 |
-| 10 | 246 | payload | packed 结构体，剩余填零 |
-
-整数均为小端，浮点为 IEEE 754 binary32，字符串为定长 UTF-8 字节数组，建议尾部填零。
-
-请求 `usb_data_report_t` 为 **12 字节**，Python 格式 `<BffBBB`：页面、电压 V、电流 A、CPU 风扇 PWM 百分比、硬盘风扇 PWM 百分比、选中条目索引 item_idx。百分比范围 0～100。运行时电压、电流来自 GD32 的 INA219；功率由本地电压×电流计算。
-
-| page | 页面 | 回复结构体 | 字节数 | Python 格式 |
-| --- | --- | --- | --- | --- |
-| 0 | 概览 | `usb_data_resp_t` 前缀 + `usb_data_overview_t` | 11 | `<BBBBBIBB` |
-| 1 | 网络 | `usb_data_resp_t` 前缀 + `usb_data_network_t` | 84 | `<BBBBBBBB12sffff16s16s16s` |
-| 2 | 存储 | `usb_data_resp_t` 前缀 + `usb_data_disk_t` | 38 | `<BBBBBBB12sQBBBII` |
-| 3 | 系统信息 | `usb_data_resp_t` 前缀 + `usb_data_sys_info_t` | 197 | `<BBBBB12s80s50s50s` |
-| 4 | 关于/二维码 | `usb_data_resp_t` 前缀 + `usb_data_about_qrcode_t` | 67 | `<BBBBBBB50s10s` |
-
-- 概览运行时间为 `uint32` 分钟，CPU/内存为百分比。
-- 网络速率和累计流量基础单位为 KB/s、KB，UI 按 1024 进位显示 KB/MB/GB/TB。这里 KB 沿用项目的 1024 字节口径。
-- 磁盘容量为 `uint64` 字节，UI 最低从 KB 显示。磁盘使用率为百分比，温度为摄氏度，使用时间为小时。
-- 每一个回复负载先放 5 字节前缀：`type`、`valid`、`page_set`、`cpu_temperature`、`hdd_temperature`，随后紧跟对应页面的数据结构。页面数据回复的 `type=0`、`valid=1`。`data` 是 GD32 收到数据后设置的本地指针，不在线上传输。
-- 温度每 5℃ 为一个档位：0～34℃ 关闭，35℃ 起依次为 30%、40%、50%、60%、70%、80%、90%，70℃ 及以上为 100%。风扇控制不依赖 UI 页面或 UI 刷新。
-- `idx` 从 0 开始，`total=0` 表示无条目。多条目由 GD32 的 item_idx 选择，NAS 必须原样回传 idx，禁止自动轮换。索引超出当前数量时，回复该 idx、最新 total，其余字段清零，GD32 调整索引后再次请求。
-- 磁盘状态：0=Good、1=Warning、2=Failure。网络 status：0=未连接、1=获取地址中、2=已连接。
-
-GD32 每秒请求当前页面。回复须匹配协议版本、外层类型、序号、页面和 CRC8；页面或条目改变后清除旧回复的有效标记，等待新回复再刷新页面。
-
-## 显示规则
-
-- Runtime：接收值和最低显示单位均为分钟。大于 60 分钟显示 h，大于 1440 分钟显示 d，换算结果四舍五入；因此 60 分钟显示 `60m`，90 分钟显示 `2h`，1440 分钟显示 `24h`。
-- 网络流量和容量：KB→MB→GB→TB，每级 1024，保留一位小数。
-- 网络 LED 与状态标签：未连接红色、获取地址中黄色、已连接绿色。
-- 首页 NAS LED 与标签：pwr_get_state() 读取 GPIO，运行中绿色，关机灰色。
-- 5 分钟无上下键操作关闭背光；首次按键只唤醒，下一次按键正常切换。USB 收发不重置休眠计时。
-- 上下键先切换当前页条目，到达首尾后再切换页面；反向进入列表页时选中最后一项。
-- 占用率：低于 75% 蓝色，75%～不足 90% 黄色，90% 起红色；圆环与百分比文字同步。
-- 磁盘健康标签：Good 绿色，Warning 黄色，Failure 红色。
-- CPU/磁盘温度：低于 50℃ 绿色，50℃～不足 85℃ 黄色，85℃ 起红色。
-
-## 离线检查
+重载规则并启动服务：
 
 ```sh
-python3 server-app/tests/test_hid.py --dry-run
-cmake -S gd32-app -B gd32-app/cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
-cmake --build gd32-app/cmake-build-debug -j 6
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo systemctl daemon-reload
+sudo systemctl enable --now nas-panel
 ```
+
+读取 SMART 信息通常需要额外设备权限。若服务用户无权运行 `smartctl`，硬盘健康、温度和使用时间会保留为默认值，不影响容量、占用率和 USB 通信。
+
+## API
+
+- `GET /api/v1/status`：系统指标、耗电量、面板连接状态、最新 GD32 上报和构建信息。
+- `GET /api/v1/config`：当前配置。
+- `PUT /api/v1/config`：校验并原子保存完整配置。
+- `GET /api/v1/health`：服务健康检查。
+
+## 检查
+
+```sh
+cd internal && go test ./...
+npm --prefix web run build
+python3 tests/test_hid.py --dry-run
+```
+
+Python HID 测试工具和协议细节见 [tests/README.md](tests/README.md)。

@@ -316,7 +316,7 @@ void setup_scr_screen_storage(lv_ui *ui)
     lv_label_set_text(ui->screen_storage_label_capacity_val, "500GB");
     lv_label_set_long_mode(ui->screen_storage_label_capacity_val, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_storage_label_capacity_val, 53, 40);
-    lv_obj_set_size(ui->screen_storage_label_capacity_val, 66, 18);
+    lv_obj_set_size(ui->screen_storage_label_capacity_val, 74, 18);
 
     //Write style for screen_storage_label_capacity_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_storage_label_capacity_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

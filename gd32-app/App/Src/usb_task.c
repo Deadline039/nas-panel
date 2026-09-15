@@ -13,6 +13,7 @@
 #include <usbd_hw.h>
 
 #include <usb_data.h>
+#include <fan_control.h>
 
 #include <custom.h>
 
@@ -62,13 +63,33 @@ static bool usb_data_check(usb_data_frame_t *frame, uint32_t sequence)
         return false;
     }
 
-    usb_data_resp_t *resp = (usb_data_resp_t *)frame->payload;
-
-    if (resp->type == 0 && resp->page_set != g_usb_data_report.page) {
+    size_t response_prefix = offsetof(usb_data_resp_t, data);
+    if (frame->length < response_prefix) {
         return false;
     }
-    memcpy(&g_usb_data_resp, resp, sizeof(usb_data_resp_t));
-    g_usb_data_resp.data = (void *)((uint8_t *)resp + offsetof(usb_data_resp_t, data));
+
+    usb_data_resp_t *resp = (usb_data_resp_t *)frame->payload;
+    if (resp->valid == 0U) {
+        return false;
+    }
+    g_usb_data_resp.cpu_temperature = resp->cpu_temperature;
+    g_usb_data_resp.hdd_temperature = resp->hdd_temperature;
+    if (resp->type == USB_DATA_RESPONSE_SETTING) {
+        if (resp->page_set != USB_DATA_SETTING_FAN_CURVES ||
+            frame->length != response_prefix + FAN_CURVE_BYTES) {
+            return false;
+        }
+        return fan_ctrl_set_curves((const uint8_t *)resp + response_prefix,
+                                   FAN_CURVE_BYTES);
+    }
+    if (resp->type != USB_DATA_RESPONSE_PAGE ||
+        resp->page_set != g_usb_data_report.page) {
+        return false;
+    }
+    g_usb_data_resp.type = resp->type;
+    g_usb_data_resp.valid = resp->valid;
+    g_usb_data_resp.page_set = resp->page_set;
+    g_usb_data_resp.data = (void *)((uint8_t *)resp + response_prefix);
 
     return true;
 }
@@ -141,7 +162,9 @@ __NO_RETURN void usb_task(void *args)
         if (received == true) {
             bool response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
             if (response_valid == true) {
-                g_usb_data_resp.valid = 1U;
+                if (rx_frame.payload[0] == USB_DATA_RESPONSE_PAGE) {
+                    g_usb_data_resp.valid = 1U;
+                }
                 last_valid_response_tick = now;
                 tx_frame.sequence++;
             }

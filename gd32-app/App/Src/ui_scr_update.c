@@ -233,7 +233,7 @@ void update_scr_storage(void)
     const char *const units[] = { "KB", "MB", "GB", "TB" };
     uint8_t unit;
     double capacity = ui_storage_value((double)data->capacity / 1024.0, &unit);
-    lv_label_set_text_fmt(guider_ui.screen_storage_label_capacity_val, "%.1f%s", capacity, units[unit]);
+    lv_label_set_text_fmt(guider_ui.screen_storage_label_capacity_val, "%.0f%s", capacity, units[unit]);
     lv_label_set_text_fmt(guider_ui.screen_storage_label_usage_percent, "%u%%", (unsigned)data->used);
     lv_arc_set_value(guider_ui.screen_storage_arc_usage, data->used);
     lv_color_t usage_color = lv_color_hex(ui_usage_color(data->used));

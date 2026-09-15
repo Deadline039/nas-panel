@@ -1,0 +1,2 @@
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3939", ATTRS{idProduct}=="0831", GROUP="nas-panel", MODE="0660"
+

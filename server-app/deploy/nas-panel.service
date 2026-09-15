@@ -1,0 +1,19 @@
+[Unit]
+Description=NAS Panel server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nas-panel
+Group=nas-panel
+WorkingDirectory=/opt/nas-panel
+ExecStart=/opt/nas-panel/nas-panel-server -config /etc/nas-panel/config.json -web-dir /opt/nas-panel/web/dist -energy-file /var/lib/nas-panel/energy.json
+Restart=on-failure
+RestartSec=2
+StateDirectory=nas-panel
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

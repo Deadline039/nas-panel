@@ -6094,7 +6094,7 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 66,
+							"width": 74,
 							"height": 18,
 							"default_style": false,
 							"text": "500GB",
@@ -17759,7 +17759,7 @@
 									40
 								],
 								"size": [
-									66,
+									74,
 									18
 								],
 								"default_style": false,
