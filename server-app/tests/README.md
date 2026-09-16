@@ -13,7 +13,7 @@ server-app/.venv/bin/python server-app/tests/test_hid.py --list
 server-app/.venv/bin/python server-app/tests/test_hid.py --serial 676643860B34
 ```
 
-先烧录配套固件并重新插拔 USB。当前为 **协议 v4**，不兼容旧版固件/测试脚本；VID/PID 仍为 `3939:0831`。只有一块面板时可省略 `--serial`。Windows 使用 `.venv\Scripts\python.exe`。
+先烧录配套固件并重新插拔 USB。当前为 **协议 v1**，不兼容旧版固件/测试脚本；VID/PID 仍为 `3939:0831`。只有一块面板时可省略 `--serial`。Windows 使用 `.venv\Scripts\python.exe`。
 
 HID 脚本参数：`--count 10` 回复十次后退出；`--delay 1.2` 延迟回复；`--dry-run` 离线检查所有页面的数据布局和 CRC8。模拟数据包含三个网卡、三个磁盘和两个链接，由面板实体按键选择，并覆盖单位切换及温度、占用率阈值。
 
@@ -23,7 +23,7 @@ Linux 无法打开设备时，可在 `/etc/udev/rules.d/70-nas-panel.rules` 添�
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3939", ATTRS{idProduct}=="0831", TAG+="uaccess"
 ```
 
-## 协议 v4
+## 协议 v1
 
 HID Input/Output Report 固定 **256 字节，无 Report ID**。中断端点 `0x81`/`0x01` 的最大包长为 64 字节，由 USB 驱动分成四包传输。也支持控制端点 `SET_REPORT(Output, ID=0, length=256)`。
 
@@ -31,7 +31,7 @@ HIDAPI `write()` 需额外前置 `0x00`，参数总长 257 字节；前置字节
 
 | 偏移 | 长度 | 字段 | 含义 |
 | --- | --- | --- | --- |
-| 0 | 1 | version | 固定 4 |
+| 0 | 1 | version | 固定 1 |
 | 1 | 1 | type | 请求=0，回复=1 |
 | 2 | 1 | reserved | 固定 0 |
 | 3 | 4 | sequence | 请求序号，回复原样回传 |

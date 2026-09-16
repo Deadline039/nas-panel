@@ -1,4 +1,6 @@
 export default {
+    githubProject: 'GitHub project',
+    checkUpdate: 'Check for updates', checkingUpdate: 'Checking…', latestVersion: 'Latest version', viewRelease: 'View releases', updateFailed: 'Update check failed. Please retry later ({message}).', update_available: 'A new version is available', update_current: 'This version is up to date or newer', update_unknown: 'Development build or unrecognized version. Please review the release page.', update_unreleased: 'No stable release has been published yet.',
     overview: 'Overview', network: 'Network', storage: 'Storage', system: 'System', fans: 'Fans', about: 'About', settings: 'Settings',
     overviewDesc: 'Live NAS and front-panel status', networkDesc: 'Physical interfaces, addresses and traffic', storageDesc: 'Physical disk capacity, health and temperature', systemDesc: 'Host hardware and operating system', fansDesc: 'Configure CPU and disk temperature fan curves', aboutDesc: 'Server build, panel connection and access URLs', settingsDesc: 'Server, reverse proxy and QR code configuration',
     panelOnline: 'Panel online', waitingPanel: 'Waiting for panel', lastUpdate: 'Last update', neverReceived: 'No data received', connectionError: 'Cannot reach server: {message}',

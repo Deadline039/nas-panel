@@ -1,4 +1,6 @@
 export default {
+    githubProject: 'GitHub 项目',
+    checkUpdate: '检查更新', checkingUpdate: '检查中…', latestVersion: '最新版本', viewRelease: '查看发布页面', updateFailed: '检查更新失败，请稍后重试（{message}）', update_available: '发现新版本', update_current: '当前版本已是最新或更新', update_unknown: '当前为开发构建或版本格式无法比较，请查看发布页面。', update_unreleased: '项目尚未发布正式版本。',
     overview: '概览', network: '网络', storage: '存储', system: '系统', fans: '风扇', about: '关于', settings: '设置',
     overviewDesc: 'NAS 与前面板的实时运行状态', networkDesc: '物理网卡、地址与流量', storageDesc: '物理硬盘容量、健康和温度', systemDesc: '主机硬件与操作系统信息', fansDesc: '设置 CPU 和硬盘风扇温控曲线', aboutDesc: '服务版本、面板连接和访问地址', settingsDesc: '服务、反向代理与二维码配置',
     panelOnline: '面板在线', waitingPanel: '等待面板', lastUpdate: '最后更新', neverReceived: '尚未收到数据', connectionError: '无法连接服务：{message}',

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Version             = 4
+	Version             = 1
 	FrameSize           = 256
 	PayloadSize         = 246
 	RequestSize         = 12

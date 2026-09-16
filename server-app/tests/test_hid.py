@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NAS panel HID mock server for protocol v4."""
+"""NAS panel HID mock server for protocol v1."""
 
 import argparse
 import math
@@ -11,7 +11,7 @@ VID = 0x3939
 PID = 0x0831
 FRAME_SIZE = 256
 PAYLOAD_SIZE = 246
-VERSION = 4
+VERSION = 1
 FRAME_REQUEST = 0
 FRAME_RESPONSE = 1
 RESPONSE_PAGE_DATA = 0

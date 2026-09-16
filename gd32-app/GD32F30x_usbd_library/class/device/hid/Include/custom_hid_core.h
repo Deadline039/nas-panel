@@ -43,7 +43,7 @@ OF SUCH DAMAGE.
 #define DESC_LEN_CONFIG           41U  /*!< configuration descriptor length */
 #define MAX_PERIPH_NUM            4U   /*!< maximum peripheral number */
 #define USB_DATA_FRAME_SIZE       256U /*!< maximum usb frame size */
-#define USB_DATA_PROTOCOL_VERSION 4U   /*!< current frame protocol version */
+#define USB_DATA_PROTOCOL_VERSION 1U   /*!< 当前帧协议版本 */
 
 typedef struct {
     uint8_t data[USB_DATA_FRAME_SIZE];

@@ -43,6 +43,7 @@ func (s *Server) Handler() http.Handler {
 	application.HandleFunc("GET /api/v1/config", s.getConfig)
 	application.HandleFunc("PUT /api/v1/config", s.putConfig)
 	application.HandleFunc("GET /api/v1/health", s.health)
+	application.HandleFunc("GET /api/v1/update", s.checkUpdate)
 	application.Handle("/", s.staticHandler())
 	basePath := s.config.Get().BasePath
 	if basePath == "" {

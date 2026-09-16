@@ -1,11 +1,11 @@
 # NAS Panel Server
 
-`server-app` 是 NAS Panel 的上位机服务，由 Go 后端和 Vue 3 前端组成。Go 服务采集 NAS 状态、响应 GD32 的 USB HID v4 请求，并提供 Web API；Vue 页面用于查看实时状态和配置 About 页二维码。
+`server-app` 是 NAS Panel 的上位机服务，由 Go 后端和 Vue 3 前端组成。Go 服务采集 NAS 状态、响应 GD32 的 USB HID v1 请求，并提供 Web API；Vue 页面用于查看实时状态和配置 About 页二维码。
 
 ## 功能
 
 - 自动连接 `3939:0831` HID 设备，可按序列号筛选。
-- 严格按照固件的 256 字节 HID v4 协议一问一答。
+- 严格按照固件的 256 字节 HID v1 协议一问一答。
 - 采集运行时间、CPU、内存、物理网卡、流量和挂载磁盘信息。
 - 使用 `smartctl` 补充硬盘温度、健康状态、通电时间和通电次数；未安装时其余功能正常运行。
 - 每两秒缓存系统状态，HID 请求不等待耗时的系统命令。
@@ -174,6 +174,7 @@ sudo systemctl enable --now nas-panel
 - `GET /api/v1/status`：系统指标、耗电量、面板连接状态、最新 GD32 上报和构建信息。
 - `GET /api/v1/config`：当前配置。
 - `PUT /api/v1/config`：校验并原子保存完整配置。
+- `GET /api/v1/update`：手动查询 GitHub 最新正式 Release，返回版本比较结果及发布页面链接（8 秒超时）。
 - `GET /api/v1/health`：服务健康检查。
 
 ## 检查
@@ -185,3 +186,7 @@ python3 tests/test_hid.py --dry-run
 ```
 
 Python HID 测试工具和协议细节见 [tests/README.md](tests/README.md)。
+
+About 页位于导航末尾，提供“检查更新”按钮。检查基于实际构建版本，与可编辑的 `serverVersion` 无关；纯 commit、开发构建及无法比较的版本会提示手动查看发布页面。当前只检查正式 Release，不自动下载或安装；没有正式 Release 时会明确提示。
+
+HID 协议编号统一为 v1，保留当前 256 字节帧和风扇设置数据布局。服务端、测试工具和 GD32 固件需配套更新。
