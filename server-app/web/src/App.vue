@@ -16,7 +16,9 @@ const saved = ref(false)
 const formError = ref('')
 const activeFanCurve = ref('cpu')
 const fanDragging = ref(false)
-const defaultFanCurve = [0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100]
+const hoveredFanPoint = ref(-1)
+const fanCurveVisiblePoints = 16
+const defaultFanCurve = [0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
 const form = reactive({
   listen: ':8080', panelSerial: '', serverVersion: '', publicScheme: 'http', publicPort: 8080, basePath: '', links: [],
   fanCurves: { cpu: [...defaultFanCurve], hdd: [...defaultFanCurve] },
@@ -86,7 +88,14 @@ async function saveConfig() {
 }
 
 function normalizeFanCurve(curve) {
-  return Array.from({ length: 20 }, (_, index) => Math.max(0, Math.min(100, Number(curve?.[index] ?? defaultFanCurve[index]))))
+  let previous = 0
+  const normalized = Array.from({ length: 20 }, (_, index) => {
+    const value = Math.round(Math.max(previous, Math.min(100, Number(curve?.[index] ?? defaultFanCurve[index]))))
+    previous = value
+    return value
+  })
+  normalized.fill(normalized[fanCurveVisiblePoints - 1], fanCurveVisiblePoints)
+  return normalized
 }
 
 function cloneConfig(config) {
@@ -103,30 +112,64 @@ function addLink() { form.links.push({ name: `Link ${form.links.length + 1}`, ur
 function removeLink(index) { form.links.splice(index, 1) }
 function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark' }
 
-function fanPointX(index) { return 40 + (940 * index / 19) }
+function fanPointX(index) { return 40 + (940 * index / (fanCurveVisiblePoints - 1)) }
 function fanPointY(value) { return 220 - Math.max(0, Math.min(100, Number(value))) * 2 }
-function fanCurvePoints(name) { return form.fanCurves[name].map((value, index) => `${fanPointX(index)},${fanPointY(value)}`).join(' ') }
-function fanTemperatureLabel(index) { return index === 19 ? '95–100℃' : `${index * 5}℃` }
-function setFanValue(name, index, value) { form.fanCurves[name][index] = Math.round(Math.max(0, Math.min(100, Number(value) || 0))) }
-
-function updateFanFromPointer(event) {
-  if (fanDragging.value === false) return
+function fanTemperature(index) { return 25 + index * 5 }
+function fanCurvePoints(name) { return form.fanCurves[name].slice(0, fanCurveVisiblePoints).map((value, index) => `${fanPointX(index)},${fanPointY(value)}`).join(' ') }
+function setFanValue(name, index, value) {
+  const curve = form.fanCurves[name]
+  const minimum = index === 0 ? 0 : curve[index - 1]
+  const maximum = index === fanCurveVisiblePoints - 1 ? 100 : curve[index + 1]
+  curve[index] = Math.round(Math.max(minimum, Math.min(maximum, Number(value) || 0)))
+  if (index === fanCurveVisiblePoints - 1) curve.fill(curve[index], fanCurveVisiblePoints)
+}
+function fanPointFromPointer(event) {
   const bounds = event.currentTarget.getBoundingClientRect()
   const x = (event.clientX - bounds.left) * 1000 / bounds.width
   const y = (event.clientY - bounds.top) * 260 / bounds.height
-  const index = Math.max(0, Math.min(19, Math.round((x - 40) * 19 / 940)))
-  setFanValue(activeFanCurve.value, index, (220 - y) / 2)
+  return {
+    index: Math.max(0, Math.min(fanCurveVisiblePoints - 1, Math.round((x - 40) * (fanCurveVisiblePoints - 1) / 940))),
+    value: (220 - y) / 2,
+  }
+}
+function fanTooltipTransform() {
+  const index = hoveredFanPoint.value
+  const value = form.fanCurves[activeFanCurve.value][index]
+  const x = Math.max(42, Math.min(834, fanPointX(index) - 72))
+  const pointY = fanPointY(value)
+  const y = pointY < 52 ? pointY + 12 : pointY - 43
+  return `translate(${x} ${y})`
+}
+function fanTooltipLabel() {
+  const index = hoveredFanPoint.value
+  return `${fanTemperature(index)}℃ · PWM ${form.fanCurves[activeFanCurve.value][index]}%`
+}
+
+function updateFanFromPointer(event) {
+  if (fanDragging.value === false) return
+  const point = fanPointFromPointer(event)
+  setFanValue(activeFanCurve.value, point.index, point.value)
+}
+
+function handleFanPointerMove(event) {
+  hoveredFanPoint.value = fanPointFromPointer(event).index
+  updateFanFromPointer(event)
 }
 
 function beginFanDrag(event) {
   fanDragging.value = true
   event.currentTarget.setPointerCapture(event.pointerId)
+  hoveredFanPoint.value = fanPointFromPointer(event).index
   updateFanFromPointer(event)
 }
 
 function endFanDrag(event) {
   fanDragging.value = false
   if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+}
+
+function leaveFanChart() {
+  if (fanDragging.value === false) hoveredFanPoint.value = -1
 }
 
 function formatBytes(bytes) {
@@ -233,15 +276,15 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
         <article class="panel-card fan-curve-card">
           <div class="section-head"><div><h3>{{ t('fanCurve') }}</h3><span>{{ t('fanCurveHint') }}</span></div><div class="fan-actions"><span v-if="panel.fanCurvePending" class="state state-1"><i></i>{{ t('waitingDelivery') }}</span><button class="primary" :disabled="saving" @click="saveConfig">{{ saving ? t('saving') : saved ? t('saved') : t('saveAndSend') }}</button></div></div>
           <div v-if="formError" class="alert compact">{{ formError }}</div>
-          <div class="curve-selector"><button :class="{ active: activeFanCurve === 'cpu' }" @click="activeFanCurve = 'cpu'"><i class="cpu-line"></i>{{ t('cpuFan') }}</button><button :class="{ active: activeFanCurve === 'hdd' }" @click="activeFanCurve = 'hdd'"><i class="hdd-line"></i>{{ t('hddFan') }}</button></div>
+          <div class="curve-selector"><button type="button" :class="{ active: activeFanCurve === 'cpu' }" @click="activeFanCurve = 'cpu'"><i class="cpu-line"></i><span>{{ t('cpuFan') }}</span><b>{{ system.cpuTemperature ?? 0 }}℃</b></button><button type="button" :class="{ active: activeFanCurve === 'hdd' }" @click="activeFanCurve = 'hdd'"><i class="hdd-line"></i><span>{{ t('hddFan') }}</span><b>{{ system.hddTemperature ?? 0 }}℃</b></button></div>
           <div class="fan-chart-wrap">
-            <svg class="fan-chart" viewBox="0 0 1000 260" role="img" :aria-label="t('fanCurve')" @pointerdown="beginFanDrag" @pointermove="updateFanFromPointer" @pointerup="endFanDrag" @pointercancel="endFanDrag">
-              <g class="chart-grid"><line v-for="value in [0, 25, 50, 75, 100]" :key="`y-${value}`" x1="40" x2="980" :y1="fanPointY(value)" :y2="fanPointY(value)"/><text v-for="value in [0, 25, 50, 75, 100]" :key="`yt-${value}`" x="32" :y="fanPointY(value) + 4" text-anchor="end">{{ value }}%</text><text v-for="item in [{ i: 0, label: '0℃' }, { i: 5, label: '25℃' }, { i: 10, label: '50℃' }, { i: 15, label: '75℃' }, { i: 19, label: '100℃' }]" :key="`x-${item.i}`" :x="fanPointX(item.i)" y="250" text-anchor="middle">{{ item.label }}</text></g>
+            <svg class="fan-chart" viewBox="0 0 1000 260" role="img" :aria-label="t('fanCurve')" @pointerdown="beginFanDrag" @pointermove="handleFanPointerMove" @pointerup="endFanDrag" @pointercancel="endFanDrag" @pointerleave="leaveFanChart">
+              <g class="chart-grid"><line v-for="value in [0, 25, 50, 75, 100]" :key="`y-${value}`" x1="40" x2="980" :y1="fanPointY(value)" :y2="fanPointY(value)"/><text v-for="value in [0, 25, 50, 75, 100]" :key="`yt-${value}`" x="32" :y="fanPointY(value) + 4" text-anchor="end">{{ value }}%</text><text v-for="item in [{ i: 0 }, { i: 5 }, { i: 10 }, { i: 15 }]" :key="`x-${item.i}`" :x="fanPointX(item.i)" y="250" text-anchor="middle">{{ fanTemperature(item.i) }}℃</text></g>
               <polyline class="curve-line cpu-line" :points="fanCurvePoints('cpu')"/><polyline class="curve-line hdd-line" :points="fanCurvePoints('hdd')"/>
-              <circle v-for="(value, index) in form.fanCurves[activeFanCurve]" :key="`${activeFanCurve}-${index}`" class="curve-point" :class="`${activeFanCurve}-point`" :cx="fanPointX(index)" :cy="fanPointY(value)" r="6"/>
+              <circle v-for="(value, index) in form.fanCurves[activeFanCurve].slice(0, fanCurveVisiblePoints)" :key="`${activeFanCurve}-${index}`" class="curve-point" :class="`${activeFanCurve}-point`" :cx="fanPointX(index)" :cy="fanPointY(value)" r="6"/>
+              <g v-if="hoveredFanPoint >= 0" class="curve-tooltip" :transform="fanTooltipTransform()"><rect width="144" height="31" rx="7"/><text x="72" y="20" text-anchor="middle">{{ fanTooltipLabel() }}</text></g>
             </svg>
           </div>
-          <div class="curve-values"><label v-for="(value, index) in form.fanCurves[activeFanCurve]" :key="index"><span>{{ fanTemperatureLabel(index) }}</span><div><input type="number" min="0" max="100" step="1" :value="value" @input="setFanValue(activeFanCurve, index, $event.target.value)"><small>%</small></div></label></div>
         </article>
       </section>
 

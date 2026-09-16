@@ -191,8 +191,8 @@ func (c *Collector) networks(ctx context.Context, now time.Time) []Network {
 			continue
 		}
 		network := Network{Name: iface.Name}
-		up := contains(iface.Flags, "up")
-		if up {
+		linkUp := networkLinkUp(ctx, iface)
+		if linkUp {
 			network.Status = 1
 		}
 		for _, address := range iface.Addrs {
@@ -200,7 +200,7 @@ func (c *Collector) networks(ctx context.Context, now time.Time) []Network {
 			if found {
 				network.IPAddress = ip
 				network.Netmask = prefix
-				if up {
+				if linkUp {
 					network.Status = 2
 				}
 				break
@@ -640,6 +640,28 @@ func physicalNetworkNames(ctx context.Context) map[string]struct{} {
 		}
 	}
 	return result
+}
+
+func networkLinkUp(ctx context.Context, iface netstat.InterfaceStat) bool {
+	if contains(iface.Flags, "up") == false {
+		return false
+	}
+	switch runtime.GOOS {
+	case "linux":
+		data, err := os.ReadFile(filepath.Join("/sys/class/net", iface.Name, "carrier"))
+		if err != nil {
+			return contains(iface.Flags, "running")
+		}
+		return strings.TrimSpace(string(data)) == "1"
+	case "darwin":
+		data, err := exec.CommandContext(ctx, "ifconfig", iface.Name).Output()
+		if err != nil {
+			return false
+		}
+		return strings.Contains(string(data), "status: active")
+	default:
+		return true
+	}
 }
 
 func shouldIncludeDisk(partition disk.PartitionStat) bool {

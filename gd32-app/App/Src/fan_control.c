@@ -20,15 +20,15 @@
 
 #define FAN_CURVE_FLASH_ADDRESS 0x080FF000U
 #define FAN_CURVE_MAGIC         0x46414E43U
-#define FAN_CURVE_VERSION       1U
+#define FAN_CURVE_VERSION       2U
 #define FAN_CURVE_STORAGE_WORDS 13U
 
-/* Each entry applies from its index multiplied by 5 degrees Celsius. */
+/* The first 16 entries cover 25 to 100 degrees Celsius in 5 degree steps. */
 static uint8_t fan_percent_table[FAN_CURVE_COUNT][FAN_CURVE_POINTS] = {
-    { 0U, 0U, 0U, 0U, 0U, 0U, 0U, 30U, 40U, 50U,
-      60U, 70U, 80U, 90U, 100U, 100U, 100U, 100U, 100U, 100U },
-    { 0U, 0U, 0U, 0U, 0U, 0U, 0U, 30U, 40U, 50U,
-      60U, 70U, 80U, 90U, 100U, 100U, 100U, 100U, 100U, 100U }
+    { 0U, 0U, 30U, 40U, 50U, 60U, 70U, 80U, 90U, 100U,
+      100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U },
+    { 0U, 0U, 30U, 40U, 50U, 60U, 70U, 80U, 90U, 100U,
+      100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U, 100U }
 };
 
 static TaskHandle_t fan_ctrl_task_handle;
@@ -62,6 +62,10 @@ static bool fan_curves_valid(const uint8_t *curves, size_t length)
     }
     for (size_t index = 0U; index < length; index++) {
         if (curves[index] > 100U) {
+            return false;
+        }
+        if (index % FAN_CURVE_POINTS != 0U &&
+            curves[index] < curves[index - 1U]) {
             return false;
         }
     }
@@ -150,10 +154,14 @@ bool fan_ctrl_set_curves(const uint8_t *curves, size_t length)
  */
 static uint8_t fan_ctrl_percent(const uint8_t *curve, uint8_t temperature)
 {
-    uint8_t index = temperature / 5U;
-    if (index >= FAN_CURVE_POINTS) {
-        index = FAN_CURVE_POINTS - 1U;
+    uint8_t clamped_temperature = temperature;
+    if (clamped_temperature < FAN_CURVE_MIN_TEMPERATURE) {
+        clamped_temperature = FAN_CURVE_MIN_TEMPERATURE;
     }
+    if (clamped_temperature > FAN_CURVE_MAX_TEMPERATURE) {
+        clamped_temperature = FAN_CURVE_MAX_TEMPERATURE;
+    }
+    uint8_t index = (clamped_temperature - FAN_CURVE_MIN_TEMPERATURE) / 5U;
     return curve[index];
 }
 

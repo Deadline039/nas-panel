@@ -27,6 +27,10 @@ typedef struct {
     bool enter_last;
     TickType_t last_input_tick;
     bool sleeping;
+    bool wake_key_active;
+    bool wake_key_previous;
+    bool handled_key_active;
+    bool handled_key_previous;
 } ui_state_t;
 
 usb_data_report_t g_usb_data_report;
@@ -98,6 +102,30 @@ static void ui_set_total(uint8_t page, uint8_t total)
 }
 
 /**
+ * @brief Cross directly to the adjacent screen without stepping through items.
+ * @param previous True for the previous screen, false for the next screen.
+ */
+static void ui_move_page(bool previous)
+{
+    uint8_t page = ui_state.page;
+    if (previous == true) {
+        page = (page + LV_SCREEN_RESERVE - 1U) % LV_SCREEN_RESERVE;
+    } else {
+        page = (page + 1U) % LV_SCREEN_RESERVE;
+    }
+    ui_state.page = page;
+    ui_state.item[page] = 0U;
+    ui_state.enter_last = false;
+    if (previous == true && ui_page_has_items(page) == true) {
+        if (ui_state.total_known[page] == false) {
+            ui_state.enter_last = true;
+        } else if (ui_state.total[page] != 0U) {
+            ui_state.item[page] = ui_state.total[page] - 1U;
+        }
+    }
+}
+
+/**
  * @brief Move through list items before crossing to the adjacent screen.
  * @param previous True for the up key, false for the down key.
  */
@@ -115,21 +143,62 @@ static void ui_move(bool previous)
             return;
         }
     }
-    if (previous == true) {
-        page = (page + LV_SCREEN_RESERVE - 1U) % LV_SCREEN_RESERVE;
-    } else {
-        page = (page + 1U) % LV_SCREEN_RESERVE;
+    ui_move_page(previous);
+}
+
+/**
+ * @brief Apply one key event to screen and item navigation.
+ * @param event Key event from the BSP state machine.
+ * @param previous True for the up key, false for the down key.
+ * @param now Current RTOS tick.
+ */
+static void ui_handle_key_event(key_event_t event, bool previous, TickType_t now)
+{
+    if (event == KEY_EVENT_NONE) {
+        return;
     }
-    ui_state.page = page;
-    ui_state.item[page] = 0U;
-    ui_state.enter_last = false;
-    if (previous == true && ui_page_has_items(page) == true) {
-        if (ui_state.total_known[page] == false) {
-            ui_state.enter_last = true;
-        } else if (ui_state.total[page] != 0U) {
-            ui_state.item[page] = ui_state.total[page] - 1U;
+    ui_state.last_input_tick = now;
+    if (event == KEY_EVENT_PRESSED) {
+        if (ui_state.sleeping == true) {
+            ui_state.sleeping = false;
+            ui_state.wake_key_active = true;
+            ui_state.wake_key_previous = previous;
+            lcd_backlight_ctrl(1);
+        } else if (ui_page_has_items(ui_state.page) == false) {
+            ui_move(previous);
+            ui_state.handled_key_active = true;
+            ui_state.handled_key_previous = previous;
         }
+        return;
     }
+    if (ui_state.wake_key_active == true &&
+        ui_state.wake_key_previous == previous) {
+        ui_state.wake_key_active = false;
+        return;
+    }
+    if (ui_state.handled_key_active == true &&
+        ui_state.handled_key_previous == previous) {
+        ui_state.handled_key_active = false;
+        return;
+    }
+    if (ui_page_has_items(ui_state.page) == false) {
+        return;
+    }
+    if (event == KEY_EVENT_LONG_PRESS) {
+        ui_move_page(previous);
+    } else if (event == KEY_EVENT_SHORT_PRESS) {
+        ui_move(previous);
+    }
+}
+
+/**
+ * @brief Poll both BSP key state machines and dispatch their events.
+ * @param now Current RTOS tick.
+ */
+static void ui_handle_keys(TickType_t now)
+{
+    ui_handle_key_event(key_up_get(), true, now);
+    ui_handle_key_event(key_down_get(), false, now);
 }
 
 /**
@@ -175,20 +244,9 @@ static void update_ui(void)
         ui_update_totals(&g_usb_data_resp);
     }
 
-    bool down = key_down_get();
-    bool up = key_up_get();
-
-    if (down == true || up == true) {
-        bool was_sleeping = ui_state.sleeping;
-        ui_state.last_input_tick = now;
-        ui_state.sleeping = false;
-        if (was_sleeping == true) {
-            lcd_backlight_ctrl(1);
-        } else {
-            ui_move(up);
-        }
-    } else if (now - ui_state.last_input_tick >= LCD_IDLE_TIMEOUT_MS &&
-               ui_state.sleeping == false) {
+    ui_handle_keys(now);
+    if (now - ui_state.last_input_tick >= LCD_IDLE_TIMEOUT_MS &&
+        ui_state.sleeping == false) {
         ui_state.sleeping = true;
         lcd_backlight_ctrl(0);
     }

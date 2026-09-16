@@ -85,8 +85,14 @@ func Load(path string) (*Store, error) {
 	if err := json.Unmarshal(data, &store.cfg); err != nil {
 		return nil, fmt.Errorf("decode config: %w", err)
 	}
+	normalized := normalizeStoredFanCurves(&store.cfg.FanCurves)
 	if err := Validate(store.cfg); err != nil {
 		return nil, fmt.Errorf("validate config: %w", err)
+	}
+	if normalized {
+		if err := store.Save(store.cfg); err != nil {
+			return nil, fmt.Errorf("normalize config: %w", err)
+		}
 	}
 	return store, nil
 }
@@ -179,7 +185,7 @@ func clone(cfg Config) Config {
 }
 
 func defaultFanCurves() FanCurves {
-	curve := FanCurve{0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100}
+	curve := FanCurve{0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100}
 	return FanCurves{
 		CPU: curve,
 		HDD: curve,
@@ -191,6 +197,36 @@ func validateFanCurve(name string, curve FanCurve) error {
 		if value > 100 {
 			return fmt.Errorf("%s fan curve value %d must be between 0 and 100", name, index)
 		}
+		if index > 0 && value < curve[index-1] {
+			return fmt.Errorf("%s fan curve value %d must not be lower than value %d", name, index, index-1)
+		}
 	}
 	return nil
+}
+
+func normalizeStoredFanCurves(curves *FanCurves) bool {
+	cpuChanged := normalizeStoredFanCurve(&curves.CPU)
+	hddChanged := normalizeStoredFanCurve(&curves.HDD)
+	legacy := FanCurve{0, 0, 0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100}
+	defaults := defaultFanCurves()
+	if curves.CPU == legacy {
+		curves.CPU = defaults.CPU
+		cpuChanged = true
+	}
+	if curves.HDD == legacy {
+		curves.HDD = defaults.HDD
+		hddChanged = true
+	}
+	return cpuChanged || hddChanged
+}
+
+func normalizeStoredFanCurve(curve *FanCurve) bool {
+	changed := false
+	for index := len(curve) - 2; index >= 0; index-- {
+		if curve[index] > curve[index+1] {
+			curve[index] = curve[index+1]
+			changed = true
+		}
+	}
+	return changed
 }

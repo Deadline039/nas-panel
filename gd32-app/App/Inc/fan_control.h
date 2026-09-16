@@ -11,9 +11,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define FAN_CURVE_POINTS 20U
-#define FAN_CURVE_COUNT  2U
-#define FAN_CURVE_BYTES  (FAN_CURVE_POINTS * FAN_CURVE_COUNT)
+#define FAN_CURVE_POINTS          20U
+#define FAN_CURVE_COUNT           2U
+#define FAN_CURVE_BYTES           (FAN_CURVE_POINTS * FAN_CURVE_COUNT)
+#define FAN_CURVE_MIN_TEMPERATURE 25U
+#define FAN_CURVE_MAX_TEMPERATURE 100U
 
 /**
  * @brief Validate, persist, and activate CPU and HDD fan curves.

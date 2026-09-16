@@ -13,9 +13,16 @@
 extern "C" {
 #endif /* __cplusplus */
 
+typedef enum {
+    KEY_EVENT_NONE = 0,
+    KEY_EVENT_PRESSED,
+    KEY_EVENT_SHORT_PRESS,
+    KEY_EVENT_LONG_PRESS,
+} key_event_t;
+
 void key_init(void);
-bool key_up_get(void);
-bool key_down_get(void);
+key_event_t key_up_get(void);
+key_event_t key_down_get(void);
 bool pwr_get_state(void);
 
 #ifdef __cplusplus
