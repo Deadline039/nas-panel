@@ -66,7 +66,7 @@ add_compile_options(
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     message(STATUS "Maximum optimization for speed")
-    add_compile_options(-Ofast -flto)
+    add_compile_options(-Os -flto)
     add_link_options(-flto)
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     message(STATUS "Debug mode")
