@@ -99,7 +99,42 @@ location /nas-panel/ {
 
 Linux 下只展示 sysfs 识别到的物理硬盘。分区、LVM 和软件 RAID 用于计算对应物理盘的占用率，不会作为额外硬盘展示。
 
+## CI 构建产物
+
+GitHub Actions 会在推送、Pull Request 和手动触发时生成以下 Artifacts：
+
+- `nas-panel-server-linux-amd64`
+- `nas-panel-server-linux-arm64`
+- `nas-panel-server-macos-amd64`
+- `nas-panel-server-macos-arm64`
+- `nas-panel-server-windows-amd64`
+- `nas-panel-gd32-firmware`
+
+Server 压缩包包含对应平台的可执行文件、Web 资源、`config.example.json` 和 README；Linux 压缩包额外包含安装与卸载脚本、systemd 服务和 udev 规则。固件压缩包包含 BIN、HEX、ELF、MAP 和反汇编 LST 文件。
+
 ## Linux 安装
+
+GitHub Actions 的 `nas-panel-server-linux-amd64` 和 `nas-panel-server-linux-arm64` 产物包含一键安装脚本。解压对应架构的压缩包后运行：
+
+```sh
+sudo ./install.sh
+```
+
+脚本会创建 `nas-panel` 系统用户，安装程序、Web 资源、systemd 服务和 udev 规则，并把卸载命令安装到 `/usr/local/sbin/nas-panel-uninstall` 后启动服务。已有的 `/etc/nas-panel/config.json` 不会被覆盖。
+
+卸载程序和服务，同时保留配置及累计电量数据：
+
+```sh
+sudo nas-panel-uninstall
+```
+
+需要连同 `/etc/nas-panel`、`/var/lib/nas-panel`、系统用户和用户组一起删除时使用：
+
+```sh
+sudo nas-panel-uninstall --purge
+```
+
+手动安装方式如下。
 
 构建完整项目：
 
@@ -120,6 +155,7 @@ make
 ```text
 deploy/70-nas-panel.rules -> /etc/udev/rules.d/70-nas-panel.rules
 deploy/nas-panel.service  -> /etc/systemd/system/nas-panel.service
+deploy/uninstall.sh       -> /usr/local/sbin/nas-panel-uninstall
 ```
 
 重载规则并启动服务：
