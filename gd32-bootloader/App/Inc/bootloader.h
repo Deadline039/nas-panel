@@ -22,23 +22,14 @@ extern "C" {
 #define BOOT_REQUEST_MAGIC 0xB007U
 
 bool bootloader_should_start_application(void);
-
 void bootloader_start_application(void);
-
 void bootloader_update_reset(void);
-
 bool bootloader_update_erase(uint32_t address);
-
 bool bootloader_update_write(const uint8_t *data, uint32_t address, uint32_t length);
-
 bool bootloader_update_set_image_info(const uint8_t *data, uint32_t length);
-
 void bootloader_update_show_waiting(void);
-
 bool bootloader_update_finish(void);
-
 void bootloader_update_abort(void);
-
 void bootloader_update_poll(void);
 
 #ifdef __cplusplus

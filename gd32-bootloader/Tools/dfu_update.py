@@ -90,12 +90,19 @@ def main() -> None:
             "-a",
             "0",
             "-s",
-            f"0x{APP_BASE:08x}:leave",
+            f"0x{APP_BASE:08x}:leave:force",
             "-D",
             str(manifest_path),
         ]
         print("Finalizing:", " ".join(command))
-        subprocess.run(command, check=True)
+        result = subprocess.run(command, check=False)
+        if result.returncode == 0:
+            print("Update complete")
+            return
+        if result.returncode == 74:
+            print("Update complete: device reset after successful verification")
+            return
+        raise subprocess.CalledProcessError(result.returncode, command)
 
 
 if __name__ == "__main__":

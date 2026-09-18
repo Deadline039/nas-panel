@@ -12,7 +12,6 @@
 #define DELAY_MAX_MS UINT32_MAX
 
 void systick_config(void);
-
 void systick_inc(void);
 uint32_t systick_get(void);
 

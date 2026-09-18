@@ -22,14 +22,17 @@ usb_dev usb_dfu;
  */
 int main(void)
 {
+
     nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
+    delay_init();
+    systick_config();
+    key_init();
+
     if (bootloader_should_start_application() == true &&
-        key_enter_bootloader() == true) {
+        key_enter_bootloader() == false) {
         bootloader_start_application();
     }
 
-    delay_init();
-    systick_config();
     fan_full_speed_init();
     rcu_config();
     gpio_config();

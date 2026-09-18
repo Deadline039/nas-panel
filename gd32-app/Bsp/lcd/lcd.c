@@ -46,8 +46,6 @@ static void lcd_write_cmd(uint8_t cmd)
 static void lcd_write_cmd_data(uint8_t cmd, uint8_t *data, uint16_t size)
 {
     LCD_DC_CMD();
-    /* wait for cmd ready */
-    delay_us(LCD_DC_SWITCH_TIME_US);
     while (RESET == spi_i2s_flag_get(SPI0, SPI_FLAG_TBE))
         ;
     spi_i2s_data_transmit(SPI0, cmd);
