@@ -30,8 +30,6 @@ static struct {
     uint32_t written;
     uint32_t expected_crc;
     uint32_t progress;
-    uint32_t next_animation;
-    uint8_t dots;
     update_phase_t phase;
     bool frozen;
 } update;
@@ -113,11 +111,11 @@ static void status_draw_labels(void)
     }
 
     if (update.phase == UPDATE_ERASING) {
-        lcd_show_string(56, 55, 372, 32, 32, "Erasing:", WHITE);
+        lcd_show_string(56, 55, 372, 32, 32, "Erasing", WHITE);
     } else if (update.phase == UPDATE_PROGRAMMING) {
-        lcd_show_string(56, 55, 372, 32, 32, "Programming:", WHITE);
+        lcd_show_string(56, 55, 372, 32, 32, "Programming", WHITE);
     } else if (update.phase == UPDATE_VERIFYING) {
-        lcd_show_string(56, 55, 372, 32, 32, "Verifying:", WHITE);
+        lcd_show_string(56, 55, 372, 32, 32, "Verifying", WHITE);
     }
 }
 
@@ -127,7 +125,8 @@ static void status_draw_labels(void)
 static void status_draw_dynamic(void)
 {
     static int dot_idx = 0;
-    const char *dot_str[3] = { ".  ", " . ", "  ." };
+    static const char *dot_str[3] = { ".  ", " . ", "  ." };
+    static uint32_t last_update_tick;
 
     uint32_t percent = 0U;
     if (update.active == true && update.total != 0U) {
@@ -150,9 +149,12 @@ static void status_draw_dynamic(void)
         lcd_show_string(392, 110, 16, 16, 16, "%", WHITE);
     }
 
-    lcd_show_string(272, 55, 32, 48, 32, dot_str[dot_idx], WHITE);
-    dot_idx++;
-    dot_idx %= 3;
+    if (systick_get() - last_update_tick > 250) {
+        lcd_show_string(272, 55, 48, 48, 32, dot_str[dot_idx], WHITE);
+        dot_idx++;
+        dot_idx %= 3;
+        last_update_tick = systick_get();
+    }
 }
 
 /**
@@ -161,8 +163,6 @@ static void status_draw_dynamic(void)
 void bootloader_update_show_waiting(void)
 {
     update.active = false;
-    update.dots = 0U;
-    update.next_animation = systick_get();
     status_draw_labels();
     status_draw_dynamic();
 }
@@ -367,8 +367,13 @@ bool bootloader_update_finish(void)
     bkp_write_data(BKP_DATA_0, 0U);
     update.active = false;
     lcd_clear(BLACK);
-    lcd_show_string(92, 55, 300, 32, 32, "Success, waiting 3 seconds", WHITE);
-    delay_ms(3000U);
+    lcd_show_string(146, 55, 300, 32, 32, "Success!", WHITE);
+    lcd_show_string(126, 90, 176, 16, 16, "Reboot after 3 seconds", WHITE);
+    delay_ms(1000U);
+    lcd_show_char(230, 90, '2', 16, 0, WHITE);
+    delay_ms(1000U);
+    lcd_show_char(230, 90, '1', 16, 0, WHITE);
+    delay_ms(1000U);
     return true;
 }
 
@@ -377,6 +382,9 @@ bool bootloader_update_finish(void)
  */
 void bootloader_update_abort(void)
 {
+    if (update.total != 0U && update.written == update.total) {
+        return;
+    }
     update.frozen = false;
     update.active = false;
     status_draw_labels();
@@ -391,11 +399,5 @@ void bootloader_update_poll(void)
     if (update.frozen == true) {
         return;
     }
-    uint32_t now = systick_get();
-    if (now - update.next_animation < 250U) {
-        return;
-    }
-    update.next_animation = now;
-    update.dots = (uint8_t)((update.dots + 1U) % 3U);
     status_draw_dynamic();
 }
