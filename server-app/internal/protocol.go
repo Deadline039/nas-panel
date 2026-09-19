@@ -24,6 +24,7 @@ const (
 	ResponsePage        = 0
 	ResponseSetting     = 1
 	SettingFanCurves    = 0
+	SettingBootloader   = 1
 	FanCurvePoints      = 20
 	FanCurvePayloadSize = FanCurvePoints * 2
 )
@@ -152,10 +153,13 @@ func EncodeResponse(sequence uint32, response Response) ([FrameSize]byte, error)
 	payload := make([]byte, 0, PayloadSize)
 	payload = append(payload, response.Type, 1)
 	if response.Type == ResponseSetting {
-		if response.Setting != SettingFanCurves {
+		if response.Setting != SettingFanCurves && response.Setting != SettingBootloader {
 			return frame, fmt.Errorf("unknown setting %d", response.Setting)
 		}
-		if len(response.SettingData) != FanCurvePayloadSize {
+		if response.Setting == SettingBootloader && len(response.SettingData) != 0 {
+			return frame, errors.New("bootloader setting must not contain data")
+		}
+		if response.Setting == SettingFanCurves && len(response.SettingData) != FanCurvePayloadSize {
 			return frame, fmt.Errorf("fan curve payload size %d, want %d", len(response.SettingData), FanCurvePayloadSize)
 		}
 		payload = append(payload, response.Setting, response.CPUTemperature, response.HDDTemperature)

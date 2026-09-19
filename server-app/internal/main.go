@@ -68,7 +68,9 @@ func main() {
 	go panelService.Run(ctx)
 
 	server := NewServer(store, collector, panelService, energyMeter, buildInfo, *webDirectory, logger)
+	defer server.firmware.Close()
 	if err := RunHTTPServer(ctx, address, server.Handler(), logger); err != nil {
+		server.firmware.Close()
 		logger.Error("web server stopped", "error", err)
 		os.Exit(1)
 	}

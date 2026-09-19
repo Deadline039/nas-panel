@@ -82,3 +82,11 @@ python3 server-app/tests/test_hid.py --dry-run
 cmake -S gd32-app -B gd32-app/cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 cmake --build gd32-app/cmake-build-debug -j 6
 ```
+
+## 从 APP 进入 DFU
+
+HID v1 新增设置项 `page_set=1`（`USB_DATA_SETTING_BOOTLOADER`）。
+回复 payload 仅 5 字节：`type=1, valid=1, page_set=1, cpu_temperature, hdd_temperature`，
+不附加其他数据，仍匹配当前请求序号与 CRC8。APP 接收后调用 `bootloader_request_update()`，
+通过 BKP 标记复位到 `3939:3927` DFU 模式。此项与风扇曲线设置 `page_set=0` 独立。
+网页升级流程及依赖见 `server-app/README.md`。

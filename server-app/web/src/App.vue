@@ -16,6 +16,10 @@ const saved = ref(false)
 const checkingUpdate = ref(false)
 const updateResult = ref(null)
 const updateError = ref('')
+const firmwareFile = ref(null)
+const firmwareUploading = ref(false)
+const firmwareError = ref('')
+const firmwareAccepted = ref(null)
 const formError = ref('')
 const activeFanCurve = ref('cpu')
 const fanDragging = ref(false)
@@ -44,6 +48,8 @@ const pages = computed(() => [
 const activeMeta = computed(() => pages.value.find((page) => page.id === activePage.value) ?? pages.value[0])
 const system = computed(() => status.value?.system ?? {})
 const panel = computed(() => status.value?.panel ?? {})
+const firmware = computed(() => firmwareAccepted.value ?? status.value?.firmware ?? {})
+const firmwareBusy = computed(() => firmwareUploading.value || firmware.value.busy === true)
 const energy = computed(() => status.value?.energy ?? {})
 const report = computed(() => panel.value.latestReport ?? {})
 const power = computed(() => (Number(report.value.voltage || 0) * Number(report.value.current || 0)).toFixed(2))
@@ -61,6 +67,7 @@ async function loadStatus(copySettings = false) {
     if (response.ok === false) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     status.value = data
+    firmwareAccepted.value = null
     loadError.value = ''
     if (copySettings || formInitialized === false) {
       Object.assign(form, cloneConfig(data.settings))
@@ -68,6 +75,36 @@ async function loadStatus(copySettings = false) {
     }
   } catch (error) {
     loadError.value = error.message
+  }
+}
+
+function selectFirmware(event) {
+  firmwareError.value = ''
+  firmwareFile.value = event.target.files?.[0] ?? null
+  const file = firmwareFile.value
+  if (file && (/\.bin$/i.test(file.name) === false || file.size < 8 || file.size > 1007616)) {
+    firmwareError.value = t('firmwareInvalidFile')
+    firmwareFile.value = null
+    event.target.value = ''
+  }
+}
+
+async function uploadFirmware() {
+  if (firmwareBusy.value || firmwareFile.value === null) return
+  firmwareUploading.value = true
+  firmwareError.value = ''
+  const body = new FormData()
+  body.append('file', firmwareFile.value)
+  try {
+    const response = await fetch(`${pageBase}/api/v1/firmware`, { method: 'POST', body })
+    const data = await response.json()
+    if (response.ok === false) throw new Error(data.error || `HTTP ${response.status}`)
+    firmwareAccepted.value = data
+    await loadStatus()
+  } catch (error) {
+    firmwareError.value = error.message
+  } finally {
+    firmwareUploading.value = false
   }
 }
 
@@ -308,7 +345,34 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
 
       <section v-else-if="activePage === 'system'" class="page-content two-column"><article class="panel-card detail-card"><div class="section-head"><h3>{{ t('system') }}</h3></div><dl><div><dt>{{ t('hostName') }}</dt><dd>{{ system.hostname || '--' }}</dd></div><div><dt>{{ t('operatingSystem') }}</dt><dd>{{ system.osName || '--' }}</dd></div><div><dt>{{ t('processor') }}</dt><dd>{{ system.cpuName || '--' }}</dd></div><div><dt>{{ t('memory') }}</dt><dd>{{ system.memoryName || '--' }}</dd></div></dl></article><article class="panel-card gauge-card"><div><span>{{ t('cpuTemperature') }}</span><strong :class="temperatureClass(system.cpuTemperature)">{{ system.cpuTemperature || 0 }}℃</strong></div><div><span>{{ t('diskTemperature') }}</span><strong :class="temperatureClass(system.hddTemperature)">{{ system.hddTemperature || 0 }}℃</strong></div><div><span>{{ t('cpuFan') }}</span><strong>{{ report.cpuFanSpeed || 0 }}%</strong></div><div><span>{{ t('hddFan') }}</span><strong>{{ report.hddFanSpeed || 0 }}%</strong></div></article></section>
 
-      <section v-else-if="activePage === 'about'" class="page-content two-column"><article class="panel-card detail-card"><div class="section-head"><h3>{{ t('serverBuild') }}</h3><button class="primary" :disabled="checkingUpdate" @click="checkUpdate">{{ checkingUpdate ? t('checkingUpdate') : t('checkUpdate') }}</button></div><dl><div><dt>{{ t('version') }}</dt><dd>{{ status?.build?.version || 'dev' }}</dd></div><div><dt>{{ t('commit') }}</dt><dd>{{ status?.build?.commit || 'unknown' }}</dd></div><div><dt>{{ t('githubProject') }}</dt><dd><a href="https://github.com/Deadline039/nas-panel" target="_blank" rel="noopener noreferrer">Deadline039/nas-panel</a></dd></div></dl><div class="update-result" aria-live="polite"><p v-if="updateError" class="bad">{{ t('updateFailed', { message: updateError }) }}</p><template v-if="updateResult"><p>{{ t(`update_${updateResult.state}`) }}</p><p v-if="updateResult.latestVersion">{{ t('latestVersion') }}: {{ updateResult.latestVersion }}</p><a :href="updateResult.releaseURL" target="_blank" rel="noopener noreferrer">{{ t('viewRelease') }}</a></template></div></article><article class="panel-card detail-card"><div class="section-head"><h3>{{ t('panelConnection') }}</h3><span class="state" :class="panel.connected ? 'state-2' : 'state-0'"><i></i>{{ panel.connected ? t('connected') : t('disconnected') }}</span></div><dl><div><dt>{{ t('product') }}</dt><dd>{{ panel.product || '--' }}</dd></div><div><dt>{{ t('serial') }}</dt><dd>{{ panel.serial || '--' }}</dd></div><div><dt>{{ t('transferState') }}</dt><dd :class="panel.connected ? 'good' : 'warn'">{{ panel.connected ? t('normal') : panel.lastError || t('connecting') }}</dd></div><div><dt>{{ t('latestPage') }}</dt><dd>{{ pageName(report.page) }}</dd></div><div><dt>{{ t('itemIndex') }}</dt><dd>{{ report.itemIndex ?? '--' }}</dd></div></dl></article><article class="panel-card address-card"><div class="section-head"><div><h3>{{ t('accessAddresses') }}</h3><span>{{ t('accessHint') }}</span></div></div><div class="address-list"><div v-for="link in allURLs" :key="`${link.kind}-${link.name}-${link.url}`"><span>{{ link.kind }} · {{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="allURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div></article></section>
+      <section v-else-if="activePage === 'about'" class="page-content two-column"><article class="panel-card detail-card"><div class="section-head"><h3>{{ t('serverBuild') }}</h3><button class="primary" :disabled="checkingUpdate" @click="checkUpdate">{{ checkingUpdate ? t('checkingUpdate') : t('checkUpdate') }}</button></div><dl><div><dt>{{ t('version') }}</dt><dd>{{ status?.build?.version || 'dev' }}</dd></div><div><dt>{{ t('commit') }}</dt><dd>{{ status?.build?.commit || 'unknown' }}</dd></div><div><dt>{{ t('githubProject') }}</dt><dd><a href="https://github.com/Deadline039/nas-panel" target="_blank" rel="noopener noreferrer">Deadline039/nas-panel</a></dd></div></dl><div class="update-result" aria-live="polite"><p v-if="updateError" class="bad">{{ t('updateFailed', { message: updateError }) }}</p><template v-if="updateResult"><p>{{ t(`update_${updateResult.state}`) }}</p><p v-if="updateResult.latestVersion">{{ t('latestVersion') }}: {{ updateResult.latestVersion }}</p><a :href="updateResult.releaseURL" target="_blank" rel="noopener noreferrer">{{ t('viewRelease') }}</a></template></div></article><article class="panel-card detail-card"><div class="section-head"><h3>{{ t('panelConnection') }}</h3><span class="state" :class="panel.connected ? 'state-2' : 'state-0'"><i></i>{{ panel.connected ? t('connected') : t('disconnected') }}</span></div><dl><div><dt>{{ t('product') }}</dt><dd>{{ panel.product || '--' }}</dd></div><div><dt>{{ t('serial') }}</dt><dd>{{ panel.serial || '--' }}</dd></div><div><dt>{{ t('transferState') }}</dt><dd :class="panel.connected ? 'good' : 'warn'">{{ panel.connected ? t('normal') : panel.lastError || t('connecting') }}</dd></div><div><dt>{{ t('latestPage') }}</dt><dd>{{ pageName(report.page) }}</dd></div><div><dt>{{ t('itemIndex') }}</dt><dd>{{ report.itemIndex ?? '--' }}</dd></div></dl></article><article class="panel-card firmware-card">
+          <div class="section-head"><div><h3>{{ t('firmwareUpgrade') }}</h3><span>{{ t('firmwareHint') }}</span></div></div>
+          <div class="firmware-methods">
+            <div class="firmware-method">
+              <h4>{{ t('firmwareLocal') }}</h4>
+              <label class="firmware-file"><span>{{ t('firmwareChoose') }}</span><input type="file" accept=".bin,application/octet-stream" :disabled="firmwareBusy" @change="selectFirmware"></label>
+              <p v-if="firmwareFile" class="firmware-selection">{{ firmwareFile.name }} · {{ formatBytes(firmwareFile.size) }}</p>
+              <p class="firmware-note">{{ t('firmwarePowerHint') }}</p>
+              <p v-if="firmware.available === false" class="warn">{{ t('firmwareMissingTool') }}</p>
+              <button class="primary" :disabled="firmwareBusy || firmwareFile === null || firmware.available !== true" @click="uploadFirmware">{{ firmwareUploading ? t('firmwareUploading') : t('firmwareStart') }}</button>
+            </div>
+            <div class="firmware-method">
+              <h4>{{ t('firmwareRelease') }}</h4><p class="firmware-note">{{ t('firmwareReleaseHint') }}</p>
+              <button class="secondary" disabled>{{ t('firmwareReleaseSoon') }}</button>
+            </div>
+          </div>
+          <div class="firmware-status" aria-live="polite">
+            <p v-if="firmwareError" class="bad">{{ firmwareError }}</p>
+            <template v-if="firmware.stage && firmware.stage !== 'idle'">
+              <strong :class="{ good: firmware.stage === 'complete', bad: firmware.stage === 'failed' }">{{ t(`firmware_${firmware.stage}`) }}</strong>
+              <p v-if="firmware.filename">{{ firmware.filename }}<span v-if="firmware.serial"> · {{ firmware.serial }}</span></p>
+              <div v-if="['erasing', 'programming'].includes(firmware.stage)" class="firmware-progress"><progress :value="firmware.progress" max="100"></progress><span>{{ firmware.progress }}%</span></div>
+              <p v-if="firmware.error" class="bad">{{ firmware.error }}</p>
+              <p v-if="firmware.stage === 'failed'" class="firmware-note">{{ t('firmwareRetryHint') }}</p>
+              <details v-if="firmware.log"><summary>{{ t('firmwareLog') }}</summary><pre>{{ firmware.log }}</pre></details>
+            </template>
+          </div>
+        </article><article class="panel-card address-card"><div class="section-head"><div><h3>{{ t('accessAddresses') }}</h3><span>{{ t('accessHint') }}</span></div></div><div class="address-list"><div v-for="link in allURLs" :key="`${link.kind}-${link.name}-${link.url}`"><span>{{ link.kind }} · {{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="allURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div></article></section>
 
       <section v-else class="page-content"><article class="panel-card settings-card"><div class="section-head"><h3>{{ t('settings') }}</h3><button class="primary" :disabled="saving" @click="saveConfig">{{ saving ? t('saving') : saved ? t('saved') : t('save') }}</button></div><div v-if="formError" class="alert compact">{{ formError }}</div><div class="form-grid"><label><span>{{ t('listenAddress') }}</span><input v-model.trim="form.listen" placeholder=":8080"><small>{{ t('restartRequired') }}</small></label><label><span>{{ t('panelSerial') }}</span><input v-model.trim="form.panelSerial" :placeholder="t('autoSelect')"><small>{{ t('serialHint') }}</small></label><label><span>{{ t('serverVersion') }}</span><input v-model.trim="form.serverVersion" maxlength="9"><small>{{ byteLength(form.serverVersion) }}/9 bytes</small></label><label><span>{{ t('publicScheme') }}</span><select v-model="form.publicScheme"><option value="http">HTTP</option><option value="https">HTTPS</option></select><small>{{ t('schemeHint') }}</small></label><label><span>{{ t('publicPort') }}</span><input v-model.number="form.publicPort" type="number" min="1" max="65535"><small>{{ t('portHint') }}</small></label><label><span>{{ t('proxyPath') }}</span><input v-model.trim="form.basePath" placeholder="/nas-panel"><small>{{ t('proxyHint') }}</small></label></div><div class="links-head"><div><h4>{{ t('automaticAddresses') }}</h4><p>{{ t('automaticHint') }}</p></div></div><div class="address-list compact-list"><div v-for="link in automaticURLs" :key="link.name"><span>{{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="automaticURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div><div class="links-head"><div><h4>{{ t('extraLinks') }}</h4><p>{{ t('extraHint') }}</p></div><button class="secondary" @click="addLink">{{ t('addLink') }}</button></div><div class="link-list"><div v-for="(link, index) in form.links" :key="index" class="link-row"><span class="link-number">{{ String(index + 1).padStart(2, '0') }}</span><input v-model.trim="link.name" :aria-label="t('linkName')" :placeholder="t('linkName')"><div class="url-input"><input v-model.trim="link.url" :aria-label="t('linkURL')" placeholder="https://"><small :class="{ over: byteLength(link.url) > 49 }">{{ byteLength(link.url) }}/49</small></div><button class="remove" :aria-label="t('removeLink')" @click="removeLink(index)">×</button></div><p v-if="form.links.length === 0" class="empty">{{ t('noLinks') }}</p></div></article></section>
     </main>

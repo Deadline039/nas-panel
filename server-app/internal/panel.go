@@ -42,6 +42,10 @@ type Service struct {
 	fanCurveRevision uint64
 	fanCurveSequence uint32
 	fanCurveSent     bool
+	maintenance      bool
+	bootRequested    bool
+	hidOpen          bool
+	firmwareSerial   string
 }
 
 // NewService creates a panel service with shared configuration and metrics.
@@ -79,9 +83,19 @@ func (s *Service) Status() Status {
 // Run keeps serving the configured panel until the context is canceled.
 func (s *Service) Run(ctx context.Context) {
 	for ctx.Err() == nil {
+		s.mu.Lock()
+		if s.maintenance {
+			s.mu.Unlock()
+			if wait(ctx, 100*time.Millisecond) == false {
+				return
+			}
+			continue
+		}
+		s.hidOpen = true
+		s.mu.Unlock()
 		device, info, err := s.open()
 		if err != nil {
-			s.setDisconnected(err)
+			s.releaseHID(err)
 			if wait(ctx, 2*time.Second) == false {
 				return
 			}
@@ -91,10 +105,13 @@ func (s *Service) Run(ctx context.Context) {
 		s.logger.Info("panel connected", "serial", info.SerialNbr, "product", info.ProductStr)
 		err = s.serve(ctx, device)
 		_ = device.Close()
+		s.releaseHID(err)
 		if ctx.Err() != nil {
 			return
 		}
-		s.setDisconnected(err)
+		if errors.Is(err, errFirmwareMaintenance) {
+			continue
+		}
 		s.logger.Warn("panel disconnected", "error", err)
 		if wait(ctx, time.Second) == false {
 			return
@@ -126,6 +143,10 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 	input := make([]byte, FrameSize)
 	writeFailures := 0
 	for ctx.Err() == nil {
+		maintenance, boot := s.firmwareMode()
+		if maintenance && boot == false {
+			return errFirmwareMaintenance
+		}
 		n, err := device.ReadWithTimeout(input, time.Second)
 		if errors.Is(err, hid.ErrTimeout) {
 			continue
@@ -157,6 +178,14 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 			}
 			settingRevision = revision
 		}
+		maintenance, boot = s.firmwareMode()
+		if maintenance {
+			if boot == false {
+				return errFirmwareMaintenance
+			}
+			response = Response{Type: ResponseSetting, Setting: SettingBootloader}
+			settingRevision = 0
+		}
 		frame, err := EncodeResponse(request.Sequence, response)
 		if err != nil {
 			s.setProtocolError(err)
@@ -182,6 +211,9 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 				return writeErr
 			}
 			continue
+		}
+		if boot {
+			return errFirmwareMaintenance
 		}
 		writeFailures = 0
 		if settingRevision != 0 {
@@ -376,4 +408,53 @@ func wait(ctx context.Context, duration time.Duration) bool {
 	case <-timer.C:
 		return true
 	}
+}
+
+var errFirmwareMaintenance = errors.New("HID paused for firmware update")
+
+// configuredSerial 返回用户选择的面板，供 DFU 恢复模式筛选使用。
+func (s *Service) configuredSerial() string { return s.config.Get().PanelSerial }
+
+// firmwareMode 返回升级控制状态；只向选中的面板发送重启命令。
+func (s *Service) firmwareMode() (bool, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.maintenance, s.bootRequested && s.status.Serial == s.firmwareSerial
+}
+
+// suspendFirmware 停止 HID 重连，必要时让当前设备通过设置回复进入 bootloader。
+func (s *Service) suspendFirmware(ctx context.Context, boot bool, serial string) error {
+	s.mu.Lock()
+	s.maintenance = true
+	s.bootRequested = boot
+	s.firmwareSerial = serial
+	s.mu.Unlock()
+	for {
+		s.mu.RLock()
+		opened := s.hidOpen
+		s.mu.RUnlock()
+		if opened == false {
+			return nil
+		}
+		if wait(ctx, 100*time.Millisecond) == false {
+			return fmt.Errorf("waiting for HID to stop: %w", ctx.Err())
+		}
+	}
+}
+
+// resumeFirmware 恢复正常 HID 连接和数据交换。
+func (s *Service) resumeFirmware() {
+	s.mu.Lock()
+	s.bootRequested = false
+	s.maintenance = false
+	s.firmwareSerial = ""
+	s.mu.Unlock()
+}
+
+// releaseHID 在句柄关闭后发布状态，避免 DFU 与 HID 同时操作设备。
+func (s *Service) releaseHID(err error) {
+	s.setDisconnected(err)
+	s.mu.Lock()
+	s.hidOpen = false
+	s.mu.Unlock()
 }

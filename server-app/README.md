@@ -21,7 +21,7 @@
 Debian/Ubuntu：
 
 ```sh
-sudo apt install build-essential libudev-dev smartmontools
+sudo apt install build-essential libudev-dev smartmontools dfu-util
 ```
 
 安装依赖并构建：
@@ -190,3 +190,35 @@ Python HID 测试工具和协议细节见 [tests/README.md](tests/README.md)。
 About 页位于导航末尾，提供“检查更新”按钮。检查基于实际构建版本，与可编辑的 `serverVersion` 无关；纯 commit、开发构建及无法比较的版本会提示手动查看发布页面。当前只检查正式 Release，不自动下载或安装；没有正式 Release 时会明确提示。
 
 HID 协议编号统一为 v1，保留当前 256 字节帧和风扇设置数据布局。服务端、测试工具和 GD32 固件需配套更新。
+
+## 面板固件升级
+
+About 页的“面板固件升级”支持上传本地 APP `.bin`；GitHub Release 固件升级入口暂未开放。
+浏览器将文件上传给 NAS 上的 Go 服务，由服务器调用 `dfu-util` 操作连接在 NAS 上的面板。
+
+服务器需要安装 `dfu-util` 并确保服务进程的 PATH 能找到它。Debian/Ubuntu 使用
+`sudo apt install dfu-util`，macOS 使用 `brew install dfu-util`。Windows 需要安装 dfu-util，
+并为 DFU 设备 `3939:3927` 配置兼容 libusb 的驱动。Linux 的部署规则已包含 DFU USB 权限；
+已有安装需更新 `deploy/70-nas-panel.rules`、重载 udev 并重新插拔设备。
+
+选择链接到 `0x08008000` 的原始 APP BIN，最大 984 KiB。不要选择 bootloader BIN、合并镜像或 ELF。
+服务端校验大小、栈顶和复位向量后，在内存中计算 CRC32，生成与
+`gd32-bootloader/Tools/dfu_update.py` 一致的 DfuSe 文件：先传长度和 CRC，再传 APP。
+临时文件在任务结束后删除。
+
+点击“开始升级”后，服务端通过 HID 设置命令让 APP 进入 bootloader，并暂时停止 HID 重连。
+下载结束后单独发送 manifest，由 bootloader 校验 Flash CRC32、提交元数据并重启。
+即使 dfu-util 在设备复位时返回 74，也只有同一序列号的面板重新发送有效 HID 数据才显示成功。
+升级阶段和日志可在网页查看，刷新页面不会中止后台任务；同时只允许一个升级任务。
+升级期间保持供电和 USB 连接。失败后可以重新选择 BIN 重试。
+
+首次使用自动进入功能需要已烧录包含 `USB_DATA_SETTING_BOOTLOADER` 命令的 APP。
+旧版 APP 无法响应此命令时，请先手动进入 bootloader：同时按住板上的上、下按键并复位，保持超过 3 秒，
+或通过现有调试方式进入。已处于 DFU 的面板也可以直接上传升级。
+多面板时使用 `panelSerial` 指定目标；未指定时，恢复模式只接受唯一一块 DFU 面板。
+
+- `GET /api/v1/firmware`：DFU 工具可用性及当前任务状态。
+- `POST /api/v1/firmware`：multipart 上传，唯一文件字段为 `file`；接受后返回 HTTP 202。
+- `/api/v1/status` 同时返回 `firmware`，便于页面轮询。
+
+本地开发验证：`cd internal && go test -race ./...`。测试使用模拟设备，不执行硬件擦写。

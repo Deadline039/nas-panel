@@ -24,6 +24,10 @@ if ! command -v systemctl >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! command -v dfu-util >/dev/null 2>&1; then
+    echo "Firmware uploads require dfu-util. Install it with your package manager."
+fi
+
 for path in \
     "$SCRIPT_DIR/nas-panel-server" \
     "$SCRIPT_DIR/web/dist/index.html" \
@@ -76,6 +80,7 @@ install -m 0644 "$SCRIPT_DIR/deploy/70-nas-panel.rules" \
 if command -v udevadm >/dev/null 2>&1; then
     udevadm control --reload-rules
     udevadm trigger --subsystem-match=hidraw || true
+    udevadm trigger --subsystem-match=usb --attr-match=idVendor=3939 --attr-match=idProduct=3927 || true
 fi
 
 systemctl daemon-reload

@@ -29,11 +29,12 @@ type Server struct {
 	build     BuildInfo
 	webDir    string
 	logger    *slog.Logger
+	firmware  *FirmwareUpdater
 }
 
 // NewServer creates the HTTP API handler.
 func NewServer(store *Store, collector *Collector, panelService *Service, energy *EnergyMeter, build BuildInfo, webDir string, logger *slog.Logger) *Server {
-	return &Server{config: store, collector: collector, panel: panelService, energy: energy, build: build, webDir: webDir, logger: logger}
+	return &Server{firmware: NewFirmwareUpdater(panelService), config: store, collector: collector, panel: panelService, energy: energy, build: build, webDir: webDir, logger: logger}
 }
 
 // Handler returns the complete API and static application handler.
@@ -44,6 +45,8 @@ func (s *Server) Handler() http.Handler {
 	application.HandleFunc("PUT /api/v1/config", s.putConfig)
 	application.HandleFunc("GET /api/v1/health", s.health)
 	application.HandleFunc("GET /api/v1/update", s.checkUpdate)
+	application.HandleFunc("GET /api/v1/firmware", s.firmwareStatus)
+	application.HandleFunc("POST /api/v1/firmware", s.uploadFirmware)
 	application.Handle("/", s.staticHandler())
 	basePath := s.config.Get().BasePath
 	if basePath == "" {
@@ -61,6 +64,7 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) status(writer http.ResponseWriter, _ *http.Request) {
 	writeJSON(writer, http.StatusOK, map[string]any{
 		"build":    s.build,
+		"firmware": s.firmware.Status(),
 		"energy":   s.energy.Current(),
 		"panel":    s.panel.Status(),
 		"system":   s.collector.Current(),

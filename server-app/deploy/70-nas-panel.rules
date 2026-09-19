@@ -1,2 +1,3 @@
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3939", ATTRS{idProduct}=="0831", GROUP="nas-panel", MODE="0660"
 
+SUBSYSTEM=="usb", ATTR{idVendor}=="3939", ATTR{idProduct}=="3927", GROUP="nas-panel", MODE="0660"
