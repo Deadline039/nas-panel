@@ -12,20 +12,6 @@
 #include <gd32f30x.h>
 #include <string.h>
 
-#define BOOT_STATUS_FONT_SIZE 32U
-#define BOOT_STATUS_Y         55U
-#define BOOT_MODE_X           148U
-#define BOOT_MODE_Y           16U
-#define BOOT_WAITING_X        124U
-#define BOOT_UPDATING_X       56U
-#define BOOT_PERCENT_X        200U
-#define BOOT_PERCENT_SIGN_X   248U
-#define BOOT_DOTS_X           272U
-#define BOOT_BAR_X            44U
-#define BOOT_BAR_Y            112U
-#define BOOT_BAR_WIDTH        340U
-#define BOOT_BAR_HEIGHT       12U
-
 typedef enum {
     UPDATE_WAITING,
     UPDATE_ERASING,
@@ -49,18 +35,6 @@ static struct {
     update_phase_t phase;
     bool frozen;
 } update;
-
-static char waiting_text[] = "Waiting";
-static char updating_text[] = "Updating:";
-static char erasing_text[] = "Erasing:";
-static char programming_text[] = "Programming:";
-static char verifying_text[] = "Verifying:";
-static char percent_text[] = "%";
-static char bootloader_mode_text[] = "Bootloader mode";
-static char success_text[] = "Success, waiting 3 seconds";
-static char verify_failed_text[] = "Verify failed";
-static char dot_blank[] = "   ";
-static char dot_text[] = ".";
 
 /**
  * @brief Enable access to the backup registers.
@@ -109,14 +83,21 @@ static bool application_valid(void)
     if (info.size < 8U || info.size > BOOT_APP_LIMIT - BOOT_APP_BASE) {
         return false;
     }
-    if (vectors[0] <= SRAM_BASE || vectors[0] > SRAM_BASE + 96U * 1024U ||
-        (vectors[0] & 7U) != 0U || (vectors[1] & 1U) == 0U ||
-        (vectors[1] & ~1U) < BOOT_APP_BASE + 8U ||
+    if (vectors[0] <= SRAM_BASE || vectors[0] > SRAM_BASE + 96U * 1024U) {
+        return false;
+    }
+    if ((vectors[0] & 7U) != 0U || (vectors[1] & 1U) == 0U) {
+        return false;
+    }
+    if ((vectors[1] & ~1U) < BOOT_APP_BASE + 8U ||
         (vectors[1] & ~1U) >= BOOT_APP_BASE + info.size) {
         return false;
     }
+
     return crc32_extend(0U, image, info.size) == info.crc;
 }
+
+static uint32_t drawn_progress_width;
 
 /**
  * @brief Draw the status labels at fixed positions.
@@ -124,27 +105,20 @@ static bool application_valid(void)
 static void status_draw_labels(void)
 {
     lcd_clear(BLACK);
-    lcd_show_string(BOOT_MODE_X, BOOT_MODE_Y, LCD_WIDTH - BOOT_MODE_X,
-                    BOOT_STATUS_FONT_SIZE, 16U, bootloader_mode_text, WHITE);
+    drawn_progress_width = 0U;
+    lcd_show_string(148, 16, 280, 32, 16, "Bootloader mode", WHITE);
     if (update.active == false) {
-        lcd_show_string(BOOT_WAITING_X, BOOT_STATUS_Y, LCD_WIDTH - BOOT_WAITING_X,
-                        BOOT_STATUS_FONT_SIZE, BOOT_STATUS_FONT_SIZE, waiting_text, WHITE);
+        lcd_show_string(124, 55, 304, 32, 32, "Waiting", WHITE);
         return;
     }
 
-    char *label = updating_text;
     if (update.phase == UPDATE_ERASING) {
-        label = erasing_text;
+        lcd_show_string(56, 55, 372, 32, 32, "Erasing:", WHITE);
     } else if (update.phase == UPDATE_PROGRAMMING) {
-        label = programming_text;
+        lcd_show_string(56, 55, 372, 32, 32, "Programming:", WHITE);
     } else if (update.phase == UPDATE_VERIFYING) {
-        label = verifying_text;
+        lcd_show_string(56, 55, 372, 32, 32, "Verifying:", WHITE);
     }
-    lcd_show_string(BOOT_UPDATING_X, BOOT_STATUS_Y, LCD_WIDTH - BOOT_UPDATING_X,
-                    BOOT_STATUS_FONT_SIZE, BOOT_STATUS_FONT_SIZE, label, WHITE);
-    lcd_show_string(BOOT_PERCENT_SIGN_X, BOOT_STATUS_Y,
-                    LCD_WIDTH - BOOT_PERCENT_SIGN_X, BOOT_STATUS_FONT_SIZE,
-                    BOOT_STATUS_FONT_SIZE, percent_text, WHITE);
 }
 
 /**
@@ -152,6 +126,9 @@ static void status_draw_labels(void)
  */
 static void status_draw_dynamic(void)
 {
+    static int dot_idx = 0;
+    const char *dot_str[3] = { ".  ", " . ", "  ." };
+
     uint32_t percent = 0U;
     if (update.active == true && update.total != 0U) {
         percent = update.progress * 100U / update.total;
@@ -160,20 +137,22 @@ static void status_draw_dynamic(void)
         percent = 100U;
     }
     if (update.active == true) {
-        lcd_show_num(BOOT_PERCENT_X, BOOT_STATUS_Y, percent, 3U, BOOT_STATUS_FONT_SIZE, WHITE);
-        lcd_fill_region(BOOT_BAR_X, BOOT_BAR_Y, BOOT_BAR_X + BOOT_BAR_WIDTH - 1U,
-                        BOOT_BAR_Y + BOOT_BAR_HEIGHT - 1U, BLACK);
-        uint32_t width = BOOT_BAR_WIDTH * percent / 100U;
-        if (width != 0U) {
-            lcd_fill_region(BOOT_BAR_X, BOOT_BAR_Y, BOOT_BAR_X + width - 1U,
-                            BOOT_BAR_Y + BOOT_BAR_HEIGHT - 1U, WHITE);
+        lcd_show_num(344, 110, percent, 3, 16, WHITE);
+        uint32_t progress_width = 286U * percent / 100U;
+        if (progress_width > drawn_progress_width) {
+            lcd_fill_region(44U + drawn_progress_width, 112U, 44U + progress_width - 1U,
+                            123U, WHITE);
+        } else if (progress_width < drawn_progress_width) {
+            lcd_fill_region(44U + progress_width, 112U, 44U + drawn_progress_width - 1U,
+                            123U, BLACK);
         }
+        drawn_progress_width = progress_width;
+        lcd_show_string(392, 110, 16, 16, 16, "%", WHITE);
     }
-    lcd_show_string(BOOT_DOTS_X, BOOT_STATUS_Y, 48U, BOOT_STATUS_FONT_SIZE,
-                    BOOT_STATUS_FONT_SIZE, dot_blank, WHITE);
-    lcd_show_string(BOOT_DOTS_X + update.dots * (BOOT_STATUS_FONT_SIZE / 2U), BOOT_STATUS_Y,
-                    BOOT_STATUS_FONT_SIZE / 2U, BOOT_STATUS_FONT_SIZE,
-                    BOOT_STATUS_FONT_SIZE, dot_text, WHITE);
+
+    lcd_show_string(272, 55, 32, 48, 32, dot_str[dot_idx], WHITE);
+    dot_idx++;
+    dot_idx %= 3;
 }
 
 /**
@@ -240,7 +219,7 @@ bool bootloader_should_start_application(void)
 /**
  * @brief Clear interrupt state and start the installed application.
  */
-void bootloader_start_application(void)
+__attribute__((noreturn)) void bootloader_start_application(void)
 {
     uint32_t base = BOOT_APP_BASE;
     __disable_irq();
@@ -254,8 +233,8 @@ void bootloader_start_application(void)
     __ISB();
     __set_MSP(*(const uint32_t *)(uintptr_t)base);
     ((void (*)(void))(*(const uint32_t *)(uintptr_t)(base + 4U)))();
-    while (true) {
-    }
+    while (1)
+        ;
 }
 
 /**
@@ -298,8 +277,13 @@ bool bootloader_update_erase(uint32_t address)
  */
 bool bootloader_update_write(const uint8_t *data, uint32_t address, uint32_t length)
 {
-    if (data == NULL || length == 0U || address < BOOT_APP_BASE ||
-        address > BOOT_APP_LIMIT || length > BOOT_APP_LIMIT - address) {
+    if (data == NULL || length == 0U) {
+        return false;
+    }
+    if (address < BOOT_APP_BASE || address > BOOT_APP_LIMIT) {
+        return false;
+    }
+    if (length > BOOT_APP_LIMIT - address) {
         return false;
     }
     uint32_t end = address + length - BOOT_APP_BASE;
@@ -354,8 +338,7 @@ bool bootloader_update_finish(void)
         update.active = false;
         update.frozen = true;
         lcd_clear(BLACK);
-        lcd_show_string(108U, BOOT_STATUS_Y, 240U, BOOT_STATUS_FONT_SIZE, BOOT_STATUS_FONT_SIZE,
-                        verify_failed_text, WHITE);
+        lcd_show_string(108, 55, 240, 32, 32, "Verify failed", WHITE);
         return false;
     }
     update.phase = UPDATE_VERIFYING;
@@ -377,16 +360,14 @@ bool bootloader_update_finish(void)
         update.active = false;
         update.frozen = true;
         lcd_clear(BLACK);
-        lcd_show_string(108U, BOOT_STATUS_Y, 240U, BOOT_STATUS_FONT_SIZE, BOOT_STATUS_FONT_SIZE,
-                        verify_failed_text, WHITE);
+        lcd_show_string(108, 55, 240, 32, 32, "Verify failed", WHITE);
         return false;
     }
     backup_write_enable();
     bkp_write_data(BKP_DATA_0, 0U);
     update.active = false;
     lcd_clear(BLACK);
-    lcd_show_string(132U, BOOT_STATUS_Y, 180U, BOOT_STATUS_FONT_SIZE, BOOT_STATUS_FONT_SIZE,
-                    success_text, WHITE);
+    lcd_show_string(92, 55, 300, 32, 32, "Success, waiting 3 seconds", WHITE);
     delay_ms(3000U);
     return true;
 }
