@@ -26,6 +26,7 @@ extern "C" {
 #define USB_DATA_RESPONSE_SETTING   1U
 
 #define USB_DATA_SETTING_FAN_CURVES 0U
+#define USB_DATA_SETTING_BOOTLOADER 1U
 
 typedef struct __attribute__((packed)) {
     uint8_t page;          /**< which page is in shown? */

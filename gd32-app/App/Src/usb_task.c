@@ -14,6 +14,7 @@
 
 #include <usb_data.h>
 #include <fan_control.h>
+#include <bootloader.h>
 
 #include <custom.h>
 
@@ -74,24 +75,35 @@ static bool usb_data_check(usb_data_frame_t *frame, uint32_t sequence)
     }
     g_usb_data_resp.cpu_temperature = resp->cpu_temperature;
     g_usb_data_resp.hdd_temperature = resp->hdd_temperature;
-    if (resp->type == USB_DATA_RESPONSE_SETTING) {
-        if (resp->page_set != USB_DATA_SETTING_FAN_CURVES ||
-            frame->length != response_prefix + FAN_CURVE_BYTES) {
+
+    if (resp->type == USB_DATA_RESPONSE_PAGE) {
+        if (resp->page_set != g_usb_data_report.page) {
             return false;
         }
-        return fan_ctrl_set_curves((const uint8_t *)resp + response_prefix,
-                                   FAN_CURVE_BYTES);
-    }
-    if (resp->type != USB_DATA_RESPONSE_PAGE ||
-        resp->page_set != g_usb_data_report.page) {
-        return false;
-    }
-    g_usb_data_resp.type = resp->type;
-    g_usb_data_resp.valid = resp->valid;
-    g_usb_data_resp.page_set = resp->page_set;
-    g_usb_data_resp.data = (void *)((uint8_t *)resp + response_prefix);
 
-    return true;
+        g_usb_data_resp.type = resp->type;
+        g_usb_data_resp.valid = resp->valid;
+        g_usb_data_resp.page_set = resp->page_set;
+        g_usb_data_resp.data = (void *)((uint8_t *)resp + response_prefix);
+
+        return true;
+    }
+    if (resp->type == USB_DATA_RESPONSE_SETTING) {
+        switch (resp->page_set) {
+            case USB_DATA_SETTING_FAN_CURVES:
+                return fan_ctrl_set_curves((const uint8_t *)resp + response_prefix,
+                                           FAN_CURVE_BYTES);
+
+            case USB_DATA_SETTING_BOOTLOADER:
+                bootloader_request_update();
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    return false;
 }
 
 /**
