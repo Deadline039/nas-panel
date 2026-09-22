@@ -89,7 +89,12 @@ void update_scr_overview(void)
 {
     lv_label_set_text_fmt(guider_ui.screen_overview_label_voltage_val, "%.2f", g_usb_data_report.voltage);
     lv_label_set_text_fmt(guider_ui.screen_overview_label_current_val, "%.2f", g_usb_data_report.current);
-    lv_label_set_text_fmt(guider_ui.screen_overview_label_power_val, "%.2f", g_usb_data_report.voltage * g_usb_data_report.current);
+    float power = g_usb_data_report.voltage * g_usb_data_report.current;
+    if (power < 10.0f) {
+        lv_label_set_text_fmt(guider_ui.screen_overview_label_power_val, "%.2f", power);
+    }else {
+        lv_label_set_text_fmt(guider_ui.screen_overview_label_power_val, "%.1f", power);
+    }
     bool pwr_state = pwr_get_state();
     uint32_t color = 0xA4A4A4U;
     if (pwr_state == true) {

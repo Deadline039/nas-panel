@@ -28,6 +28,15 @@ if ! command -v dfu-util >/dev/null 2>&1; then
     echo "Firmware uploads require dfu-util. Install it with your package manager."
 fi
 
+if ! command -v smartctl >/dev/null 2>&1; then
+    echo "SMART monitoring requires smartmontools (smartctl). Install it with your package manager."
+fi
+
+if ! getent group disk >/dev/null 2>&1; then
+    echo "The disk group is required for SMART device access on this system." >&2
+    exit 1
+fi
+
 for path in \
     "$SCRIPT_DIR/nas-panel-server" \
     "$SCRIPT_DIR/web/dist/index.html" \

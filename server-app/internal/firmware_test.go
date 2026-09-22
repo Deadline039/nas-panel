@@ -233,6 +233,21 @@ func TestFirmwareProgress(t *testing.T) {
 	}
 }
 
+// TestFirmwareOutputCarriageReturn 保留进度行的最新内容，不将终端刷新写成多行日志。
+func TestFirmwareOutputCarriageReturn(t *testing.T) {
+	u := NewFirmwareUpdater(nil)
+	defer u.Close()
+	w := &firmwareOutput{updater: u}
+	_, _ = w.Write([]byte("Erase [ ] 0%\rErase [=] 4%\rErase [==] 8%\r"))
+	if strings.Contains(u.state.Log, "0%") || strings.Contains(u.state.Log, "4%") || strings.Contains(u.state.Log, "8%") == false {
+		t.Fatal(u.state.Log)
+	}
+	_, _ = w.Write([]byte("Erase done.\nDownload [ ] 0%\rDownload [=] 5%\r"))
+	if strings.Contains(u.state.Log, "Erase done.") == false || strings.Contains(u.state.Log, "Download [=] 5%") == false || strings.Contains(u.state.Log, "Download [ ] 0%") {
+		t.Fatal(u.state.Log)
+	}
+}
+
 // TestFirmwareUploadAPI 验证反代路由、缺依赖、非法文件及跨站请求不会启动升级。
 func TestFirmwareUploadAPI(t *testing.T) {
 	cfg := Default()

@@ -7,6 +7,11 @@ Wants=network-online.target
 Type=simple
 User=nas-panel
 Group=nas-panel
+# 磁盘设备访问及 ATA/SAT SMART 命令所需权限，仅对本服务生效。
+SupplementaryGroups=disk
+AmbientCapabilities=CAP_SYS_RAWIO
+CapabilityBoundingSet=CAP_SYS_RAWIO
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 WorkingDirectory=/opt/nas-panel
 ExecStart=/opt/nas-panel/nas-panel-server -config /etc/nas-panel/config.json -web-dir /opt/nas-panel/web/dist -energy-file /var/lib/nas-panel/energy.json
 Restart=on-failure

@@ -7,7 +7,7 @@
 - 自动连接 `3939:0831` HID 设备，可按序列号筛选。
 - 严格按照固件的 256 字节 HID v1 协议一问一答。
 - 采集运行时间、CPU、内存、物理网卡、流量和挂载磁盘信息。
-- 使用 `smartctl` 补充硬盘温度、健康状态、通电时间和通电次数；未安装时其余功能正常运行。
+- 使用 `smartctl` 补充硬盘温度、健康状态、通电时间和启停次数；未安装时其余功能正常运行。
 - 每两秒缓存系统状态，HID 请求不等待耗时的系统命令。
 - Web 页面包含五个状态页面、风扇曲线页面和设置页面，支持中英文及深浅色主题。
 - Web 端可编辑 CPU/HDD 独立的 20 点风扇曲线，保存后通过 HID 发给 GD32 并写入片内 Flash。
@@ -167,7 +167,21 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now nas-panel
 ```
 
-读取 SMART 信息通常需要额外设备权限。若服务用户无权运行 `smartctl`，硬盘健康、温度和使用时间会保留为默认值，不影响容量、占用率和 USB 通信。
+SMART 采集依赖 `smartmontools`。systemd 服务通过 `SupplementaryGroups=disk` 访问磁盘设备，
+并通过 `CAP_SYS_RAWIO` 执行 ATA/SAT 直通命令；仍以 `nas-panel` 用户运行，保留
+`NoNewPrivileges=true`。这些权限仅授予服务及其子进程，不修改所有用户的磁盘权限或 smartctl 文件权限。
+特殊 RAID/USB 桥接或其他控制器仍可能需要额外的设备类型配置或权限。
+
+已有安装需更新 service 文件后运行 `sudo systemctl daemon-reload` 和
+`sudo systemctl restart nas-panel`；重新运行新版安装脚本也会更新服务文件并保留配置和耗电数据。
+服务启动时立即采集，之后 SMART 每分钟刷新。失败原因现在以 Warning 写入正常日志：
+
+```sh
+sudo journalctl -u nas-panel -n 100 --no-pager
+```
+
+日志会保留 smartctl 的权限不足、缺少工具、设备类型错误或超时说明。
+页面的“启停次数”来自 ATA SMART 属性 4（`Start_Stop_Count`）的原始值，API 和 HID 字段仍使用 `cycles`。未提供此属性的硬盘显示 0，不使用通电次数替代。
 
 ## API
 

@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -353,7 +355,7 @@ func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []s
 		if result, err := readSMART(ctx, device); err == nil {
 			c.smart[device] = result
 		} else {
-			c.logger.Debug("SMART data unavailable", "device", device, "error", err)
+			c.logger.Warn("SMART data unavailable", "device", device, "error", err)
 		}
 	}
 	c.lastSMART = now
@@ -476,22 +478,50 @@ func temperatures(ctx context.Context) (uint8, uint8) {
 	return cpuTemperature, hddTemperature
 }
 
+// readSMART 读取磁盘 SMART，并保留权限、设备类型及超时等诊断信息。
 func readSMART(parent context.Context, device string) (smartResult, error) {
 	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
 	defer cancel()
-	data, commandErr := exec.CommandContext(ctx, "smartctl", "-a", "-j", device).Output()
-	if commandErr != nil && len(data) == 0 {
-		return smartResult{}, commandErr
+	command := exec.CommandContext(ctx, "smartctl", "-a", "-j", device)
+	var stderr bytes.Buffer
+	command.Stderr = &stderr
+	data, commandErr := command.Output()
+	if ctx.Err() != nil {
+		return smartResult{}, fmt.Errorf("smartctl %s: %w", device, ctx.Err())
+	}
+	return parseSMART(data, stderr.String(), commandErr)
+}
+
+// parseSMART 解析结果；健康告警导致的非零退出码不应丢弃已读取的数据。
+func parseSMART(data []byte, stderr string, commandErr error) (smartResult, error) {
+	if len(data) == 0 {
+		if commandErr == nil {
+			commandErr = errors.New("smartctl returned no data")
+		}
+		return smartResult{}, fmt.Errorf("smartctl: %w; %s", commandErr, strings.TrimSpace(stderr))
 	}
 	var raw struct {
+		Smartctl struct {
+			ExitStatus int `json:"exit_status"`
+			Messages   []struct {
+				String string `json:"string"`
+			} `json:"messages"`
+		} `json:"smartctl"`
 		Temperature struct {
 			Current int `json:"current"`
 		} `json:"temperature"`
 		PowerOnTime struct {
 			Hours uint64 `json:"hours"`
 		} `json:"power_on_time"`
-		PowerCycleCount uint64 `json:"power_cycle_count"`
-		SMARTStatus     struct {
+		ATAAttributes struct {
+			Table []struct {
+				ID  int `json:"id"`
+				Raw struct {
+					Value uint64 `json:"value"`
+				} `json:"raw"`
+			} `json:"table"`
+		} `json:"ata_smart_attributes"`
+		SMARTStatus struct {
 			Passed *bool `json:"passed"`
 		} `json:"smart_status"`
 		NVMeHealth struct {
@@ -499,21 +529,38 @@ func readSMART(parent context.Context, device string) (smartResult, error) {
 		} `json:"nvme_smart_health_information_log"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return smartResult{}, err
+		return smartResult{}, fmt.Errorf("invalid smartctl JSON: %w; stderr: %s", err, strings.TrimSpace(stderr))
 	}
 	result := smartResult{
 		temperature: temperature(float64(raw.Temperature.Current)),
 		hours:       clampUint32(raw.PowerOnTime.Hours),
-		cycles:      clampUint32(raw.PowerCycleCount),
+	}
+	// 属性 4 的原始值表示启停次数，不能使用归一化值或通电次数替代。
+	for _, attribute := range raw.ATAAttributes.Table {
+		if attribute.ID == 4 {
+			result.cycles = clampUint32(attribute.Raw.Value)
+			break
+		}
 	}
 	if raw.SMARTStatus.Passed != nil && *raw.SMARTStatus.Passed == false {
 		result.status = 2
 	} else if raw.NVMeHealth.CriticalWarning != 0 {
 		result.status = 1
 	}
-	if commandErr != nil && raw.SMARTStatus.Passed == nil && result.temperature == 0 &&
-		result.hours == 0 && result.cycles == 0 {
-		return smartResult{}, commandErr
+	if raw.SMARTStatus.Passed == nil && result.temperature == 0 && result.hours == 0 && result.cycles == 0 {
+		messages := make([]string, 0, len(raw.Smartctl.Messages)+1)
+		for _, message := range raw.Smartctl.Messages {
+			if message.String != "" {
+				messages = append(messages, message.String)
+			}
+		}
+		if strings.TrimSpace(stderr) != "" {
+			messages = append(messages, strings.TrimSpace(stderr))
+		}
+		if commandErr != nil {
+			messages = append(messages, commandErr.Error())
+		}
+		return smartResult{}, fmt.Errorf("SMART fields unavailable (exit status %d): %s", raw.Smartctl.ExitStatus, strings.Join(messages, "; "))
 	}
 	return result, nil
 }

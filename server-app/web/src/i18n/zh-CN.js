@@ -31,7 +31,7 @@ export default {
     runtime: '运行时间', cpuLoad: 'CPU 负载', memoryLoad: '内存负载', cpuTemperature: 'CPU 温度', diskTemperature: '硬盘温度', physicalDisks: '{count} 块物理硬盘',
     panelTelemetry: '前面板数据', voltage: '电压', current: '电流', power: '功率', cpuFan: 'CPU 风扇', hddFan: '硬盘风扇', responses: '已回复 {count} 个数据包',
     interface: '接口', physicalInterfaces: '{count} 个物理网卡', state: '状态', address: '地址', netmask: '子网掩码', gateway: '网关', upload: '上传', download: '下载', totalTraffic: '累计流量', noNetwork: '没有可显示的物理网卡', disconnected: '未连接', acquiring: '获取地址中', connected: '已连接', unknown: '未知',
-    device: '设备', mountpoint: '挂载点', capacity: '容量', usage: '占用', used: '已使用', health: '健康', temperature: '温度', powerOnHours: '通电时间', cycles: '通电次数', hours: '{count} 小时', cycleCount: '{count} 次', noStorage: '没有可显示的物理硬盘', diskGood: '良好', diskWarning: '警告', diskFailure: '故障',
+    device: '设备', mountpoint: '挂载点', capacity: '容量', usage: '占用', used: '已使用', health: '健康', temperature: '温度', powerOnHours: '通电时间', cycles: '启停次数', hours: '{count} 小时', cycleCount: '{count} 次', noStorage: '没有可显示的物理硬盘', diskGood: '良好', diskWarning: '警告', diskFailure: '故障',
     fanCurve: '风扇温控曲线', fanCurveHint: '25～100℃，每 5℃ 一个档位；拖动曲线调整 PWM，后一个档位不会低于前一个档位。', saveAndSend: '保存并发送', waitingDelivery: '等待面板确认',
     hostName: '主机名', operatingSystem: '操作系统', processor: '处理器', memory: '内存', serverBuild: '服务构建', version: '版本', commit: 'Commit',
     panelConnection: '面板连接', product: '产品', serial: '序列号', transferState: '传输状态', normal: '传输正常', connecting: '正在连接', latestPage: '最近请求页面', itemIndex: '条目索引',

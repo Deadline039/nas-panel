@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import zlib
 
@@ -44,7 +45,11 @@ def create_dfuse(image: bytes, crc: int) -> bytes:
     target = b"Target" + bytes([0]) + struct.pack("<I", 1) + b"NAS Panel".ljust(255, b"\0")
     target += struct.pack("<2I", len(elements), 2) + elements
     prefix = b"DfuSe" + bytes([1]) + struct.pack("<I", 11 + len(target)) + bytes([1])
-    data = prefix + target
+    return add_dfu_suffix(prefix + target)
+
+
+def add_dfu_suffix(data: bytes) -> bytes:
+    """Append a valid DFU suffix to data."""
     suffix = struct.pack("<4H3sB", 0xFFFF, USB_PRODUCT, USB_VENDOR, 0x011A, b"UFD", 16)
     return data + suffix + struct.pack("<I", zlib.crc32(data + suffix) ^ 0xFFFFFFFF)
 
@@ -95,13 +100,15 @@ def main() -> None:
             str(manifest_path),
         ]
         print("Finalizing:", " ".join(command))
-        result = subprocess.run(command, check=False)
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
         if result.returncode == 0:
             print("Update complete")
             return
-        if result.returncode == 74:
+        if result.returncode == 74 and "Error during download get_status" in result.stderr:
             print("Update complete: device reset after successful verification")
             return
+        print(result.stdout, end="")
+        print(result.stderr, end="", file=sys.stderr)
         raise subprocess.CalledProcessError(result.returncode, command)
 
 

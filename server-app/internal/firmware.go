@@ -288,9 +288,12 @@ func (w *limitedOutput) Write(data []byte) (int, error) {
 }
 
 type firmwareOutput struct {
-	updater  *FirmwareUpdater
-	progress bool
-	pending  string
+	updater   *FirmwareUpdater
+	progress  bool
+	pending   string
+	history   string
+	current   string
+	pendingCR bool
 }
 
 var dfuProgressPattern = regexp.MustCompile(`(Erase|Download)\s*\[[^\]]*\]\s*([0-9]+)%`)
@@ -300,7 +303,31 @@ func (w *firmwareOutput) Write(data []byte) (int, error) {
 	u := w.updater
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.state.Log += string(data)
+	for _, value := range data {
+		if w.pendingCR {
+			if value == '\n' {
+				w.history += w.current + "\n"
+				w.current = ""
+				w.pendingCR = false
+				continue
+			}
+			w.current = ""
+			w.pendingCR = false
+		}
+		switch value {
+		case '\r':
+			w.pendingCR = true
+		case '\n':
+			w.history += w.current + "\n"
+			w.current = ""
+		default:
+			w.current += string(value)
+		}
+	}
+	if len(w.history) > 8192 {
+		w.history = w.history[len(w.history)-8192:]
+	}
+	u.state.Log = w.history + w.current
 	if len(u.state.Log) > 8192 {
 		u.state.Log = u.state.Log[len(u.state.Log)-8192:]
 	}
