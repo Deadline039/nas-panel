@@ -10,14 +10,65 @@ SERVICE_DIR=/etc/systemd/system
 SERVICE_NAME=nas-panel.service
 SBIN_DIR=/usr/local/sbin
 UNINSTALL_PATH=$SBIN_DIR/nas-panel-uninstall
+RUN_USER=
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --user)
+            if [ "$#" -lt 2 ]; then
+                echo "Usage: $0 [--user nas-panel|root]" >&2
+                exit 1
+            fi
+            RUN_USER=$2
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--user nas-panel|root]"
+            echo "Without --user, interactive installs ask; non-interactive installs use nas-panel."
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+case "$RUN_USER" in
+    ''|nas-panel|root) ;;
+    *)
+        echo "Service user must be nas-panel or root." >&2
+        exit 1
+        ;;
+esac
 
 if [ "$(id -u)" -ne 0 ]; then
     if command -v sudo >/dev/null 2>&1; then
-        exec sudo -- "$0" "$@"
+        if [ -n "$RUN_USER" ]; then
+            exec sudo -- "$0" --user "$RUN_USER"
+        fi
+        exec sudo -- "$0"
     fi
     echo "Run this installer as root." >&2
     exit 1
 fi
+
+if [ -z "$RUN_USER" ] && [ -t 0 ]; then
+    echo "Select the service user:"
+    echo "  1) nas-panel (default, dedicated user with SMART/HID/DFU permissions)"
+    echo "  2) root (the entire service, including the web interface, runs as root)"
+    while [ -z "$RUN_USER" ]; do
+        printf 'Service user [1/2, default 1]: '
+        CHOICE=
+        read -r CHOICE || CHOICE=1
+        case "$CHOICE" in
+            ''|1|nas-panel) RUN_USER=nas-panel ;;
+            2|root) RUN_USER=root ;;
+            *) echo "Please select 1 or 2." ;;
+        esac
+    done
+fi
+RUN_USER=${RUN_USER:-nas-panel}
 
 if ! command -v systemctl >/dev/null 2>&1; then
     echo "systemd is required." >&2
@@ -32,7 +83,7 @@ if ! command -v smartctl >/dev/null 2>&1; then
     echo "SMART monitoring requires smartmontools (smartctl). Install it with your package manager."
 fi
 
-if ! getent group disk >/dev/null 2>&1; then
+if [ "$RUN_USER" = nas-panel ] && ! getent group disk >/dev/null 2>&1; then
     echo "The disk group is required for SMART device access on this system." >&2
     exit 1
 fi
@@ -80,9 +131,21 @@ if [ ! -f "$CONFIG_DIR/config.json" ]; then
     install -m 0660 -o root -g nas-panel \
         "$SCRIPT_DIR/config.example.json" "$CONFIG_DIR/config.json"
 fi
+# 切换运行用户时保留配置内容，并恢复专用用户所需的读写权限。
+chown root:nas-panel "$CONFIG_DIR/config.json"
+chmod 0660 "$CONFIG_DIR/config.json"
 
 install -d -m 0755 "$SERVICE_DIR" "$RULES_DIR"
 install -m 0644 "$SCRIPT_DIR/deploy/$SERVICE_NAME" "$SERVICE_DIR/$SERVICE_NAME"
+if [ "$RUN_USER" = root ]; then
+    # root 模式使用默认能力集合，不保留专用用户的磁盘组和能力限制。
+    sed -e 's/^User=nas-panel$/User=root/' \
+        -e 's/^Group=nas-panel$/Group=root/' \
+        -e '/^SupplementaryGroups=/d' \
+        -e '/^AmbientCapabilities=/d' \
+        -e '/^CapabilityBoundingSet=/d' \
+        "$SCRIPT_DIR/deploy/$SERVICE_NAME" > "$SERVICE_DIR/$SERVICE_NAME"
+fi
 install -m 0644 "$SCRIPT_DIR/deploy/70-nas-panel.rules" \
     "$RULES_DIR/70-nas-panel.rules"
 
@@ -96,6 +159,7 @@ systemctl daemon-reload
 systemctl enable --now "$SERVICE_NAME"
 
 echo "NAS Panel installed successfully."
+echo "Service user: $RUN_USER"
 echo "Configuration: $CONFIG_DIR/config.json"
 echo "Service status: systemctl status $SERVICE_NAME"
 echo "Uninstall: $UNINSTALL_PATH"

@@ -120,7 +120,18 @@ GitHub Actions 的 `nas-panel-server-linux-amd64` 和 `nas-panel-server-linux-ar
 sudo ./install.sh
 ```
 
-脚本会创建 `nas-panel` 系统用户，安装程序、Web 资源、systemd 服务和 udev 规则，并把卸载命令安装到 `/usr/local/sbin/nas-panel-uninstall` 后启动服务。已有的 `/etc/nas-panel/config.json` 不会被覆盖。
+脚本会询问服务运行用户：`1` 为专用用户 `nas-panel`（默认），`2` 为 `root`。root 模式下，整个服务及网页接口都拥有 root 权限。
+
+也可以通过参数指定，跳过询问：
+
+```sh
+sudo ./install.sh --user root
+sudo ./install.sh --user nas-panel
+```
+
+非交互运行且未指定参数时使用 `nas-panel`。重新安装时可重新选择运行用户。脚本在两种模式下都会创建 `nas-panel` 系统用户和组，用于配置文件权限及 udev 规则，安装程序、Web 资源、systemd 服务和 udev 规则，并把卸载命令安装到 `/usr/local/sbin/nas-panel-uninstall` 后启动服务。已有的 `/etc/nas-panel/config.json` 内容不会被覆盖。
+
+若之前通过 `systemctl edit nas-panel.service` 设置过 `User`、`Group` 或能力限制，请移除对应的自定义配置，否则其优先级高于安装脚本生成的服务文件。
 
 卸载程序和服务，同时保留配置及累计电量数据：
 
@@ -167,10 +178,11 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now nas-panel
 ```
 
-SMART 采集依赖 `smartmontools`。systemd 服务通过 `SupplementaryGroups=disk` 访问磁盘设备，
+SMART 采集依赖 `smartmontools`。专用用户模式的 systemd 服务通过 `SupplementaryGroups=disk` 访问磁盘设备，
 并通过 `CAP_SYS_RAWIO` 执行 ATA/SAT 直通命令；仍以 `nas-panel` 用户运行，保留
 `NoNewPrivileges=true`。这些权限仅授予服务及其子进程，不修改所有用户的磁盘权限或 smartctl 文件权限。
 特殊 RAID/USB 桥接或其他控制器仍可能需要额外的设备类型配置或权限。
+root 模式不设置上述附加组和能力限制，同样保留 `NoNewPrivileges=true`。
 
 已有安装需更新 service 文件后运行 `sudo systemctl daemon-reload` 和
 `sudo systemctl restart nas-panel`；重新运行新版安装脚本也会更新服务文件并保留配置和耗电数据。
