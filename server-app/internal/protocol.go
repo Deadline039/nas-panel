@@ -45,6 +45,7 @@ type OverviewPayload struct {
 	RunningMinutes uint32
 	CPULoad        uint8
 	MemoryLoad     uint8
+	Hostname       string
 }
 
 // NetworkPayload is one network interface payload.
@@ -179,6 +180,7 @@ func EncodeResponse(sequence uint32, response Response) ([FrameSize]byte, error)
 	case PageOverview:
 		payload = appendUint32(payload, response.Overview.RunningMinutes)
 		payload = append(payload, response.Overview.CPULoad, response.Overview.MemoryLoad)
+		payload = appendString(payload, response.Overview.Hostname, 12)
 	case PageNetwork:
 		payload = append(payload, response.Network.Index, response.Network.Total, response.Network.Status)
 		payload = appendString(payload, response.Network.Name, 12)

@@ -27,6 +27,7 @@ typedef struct {
     bool enter_last;
     TickType_t last_input_tick;
     bool sleeping;
+    bool nas_power_previous;
     bool wake_key_active;
     bool wake_key_previous;
     bool handled_key_active;
@@ -49,6 +50,7 @@ void lvgl_task(void *args);
 void ui_init(void)
 {
     key_init();
+    ui_state.nas_power_previous = pwr_get_state();
     xTaskCreate(lvgl_task, "lvgl task", 512, NULL, 1, &lvgl_task_handle);
 }
 
@@ -243,6 +245,15 @@ static void update_ui(void)
     } else {
         ui_update_totals(&g_usb_data_resp);
     }
+
+    bool nas_power = pwr_get_state();
+    if (ui_state.sleeping == true && ui_state.nas_power_previous == false &&
+        nas_power == true) {
+        ui_state.sleeping = false;
+        ui_state.last_input_tick = now;
+        lcd_backlight_ctrl(1);
+    }
+    ui_state.nas_power_previous = nas_power;
 
     ui_handle_keys(now);
     if (now - ui_state.last_input_tick >= LCD_IDLE_TIMEOUT_MS &&

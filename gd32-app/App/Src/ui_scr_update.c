@@ -92,7 +92,7 @@ void update_scr_overview(void)
     float power = g_usb_data_report.voltage * g_usb_data_report.current;
     if (power < 10.0f) {
         lv_label_set_text_fmt(guider_ui.screen_overview_label_power_val, "%.2f", power);
-    }else {
+    } else {
         lv_label_set_text_fmt(guider_ui.screen_overview_label_power_val, "%.1f", power);
     }
     bool pwr_state = pwr_get_state();
@@ -107,6 +107,7 @@ void update_scr_overview(void)
     lv_led_on(guider_ui.screen_overview_led_nas_status);
     lv_obj_set_style_text_color(guider_ui.screen_overview_label_nas_state, lv_color_hex(color), LV_PART_MAIN);
     if (g_usb_data_resp.valid == 0U || g_usb_data_resp.data == NULL) {
+        lv_label_set_text(guider_ui.screen_overview_label_nas_name, "--");
         lv_label_set_text(guider_ui.screen_overview_label_runtime_val, "--");
         lv_label_set_text(guider_ui.screen_overview_label_cpu_val, "--");
         lv_label_set_text(guider_ui.screen_overview_label_mem_val, "--");
@@ -115,6 +116,7 @@ void update_scr_overview(void)
     const usb_data_overview_t *data = g_usb_data_resp.data;
     char unit;
     uint32_t runtime = ui_runtime_value(data->running_time, &unit);
+    lv_label_set_text_fmt(guider_ui.screen_overview_label_nas_name, "%.*s", (int)sizeof(data->hostname), data->hostname);
     lv_label_set_text_fmt(guider_ui.screen_overview_label_runtime_val, "%lu%c", (unsigned long)runtime, unit);
     lv_label_set_text_fmt(guider_ui.screen_overview_label_cpu_val, "%u%%", (unsigned)data->cpu_load);
     lv_label_set_text_fmt(guider_ui.screen_overview_label_mem_val, "%u%%", (unsigned)data->mem_load);

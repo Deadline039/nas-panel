@@ -58,6 +58,7 @@ typedef struct __attribute__((packed)) {
     uint32_t running_time; /**< Runtime in minute. */
     uint8_t cpu_load;
     uint8_t mem_load;
+    char hostname[12];
 } usb_data_overview_t;
 
 typedef struct __attribute__((packed)) {

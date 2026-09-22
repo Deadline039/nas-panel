@@ -264,6 +264,7 @@ func responseFor(request Request, snapshot Snapshot, cfg Config, build BuildInfo
 			RunningMinutes: snapshot.RunningMinutes,
 			CPULoad:        snapshot.CPULoad,
 			MemoryLoad:     snapshot.MemoryLoad,
+			Hostname:       snapshot.Hostname,
 		}
 	case PageNetwork:
 		total := lengthByte(len(snapshot.Networks))

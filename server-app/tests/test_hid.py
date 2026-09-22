@@ -23,7 +23,7 @@ HEADER = struct.Struct("<BBBIHB")
 REQUEST = struct.Struct("<BffBBB")
 RESPONSE = struct.Struct("<BBBBB")
 PAGE_DATA = (
-    struct.Struct("<IBB"),
+    struct.Struct("<IBB12s"),
     struct.Struct("<BBB12sffff16s16s16s"),
     struct.Struct("<BB12sQBBBII"),
     struct.Struct("<12s80s50s50s"),
@@ -88,7 +88,7 @@ def make_page_data(page, sample, index):
     if page == 0:
         runtimes = (59, 60, 61, 90, 1439, 1440, 1441, 2160)
         return PAGE_DATA[page].pack(
-            runtimes[sample % len(runtimes)], 20 + sample % 60, 40 + sample % 30
+            runtimes[sample % len(runtimes)], 20 + sample % 60, 40 + sample % 30, b"NAS-MOCK"
         )
     if page == 1:
         rates = (128.5, 2048.0, 2097152.0, 2147483648.0)
@@ -151,7 +151,7 @@ def make_fan_setting(sequence):
 
 def self_check():
     """Check every request and response layout without opening a HID device."""
-    expected_sizes = (11, 84, 38, 197, 87)
+    expected_sizes = (23, 84, 38, 197, 87)
     for page, name in enumerate(PAGE_NAMES):
         request = make_frame(
             FRAME_REQUEST, 42, REQUEST.pack(page, 12.0, 1.25, 30, 40, 0)
