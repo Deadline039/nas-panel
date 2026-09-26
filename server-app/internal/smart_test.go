@@ -100,7 +100,9 @@ echo '{"smartctl":{"exit_status":0},"smart_status":{"passed":true},"temperature"
 	c.smart["/dev/removed"] = want
 	t.Setenv("SMART_TEST_MODE", "standby")
 	c.refreshSMART(context.Background(), now.Add(time.Minute), []string{"/dev/test", "/dev/new"})
-	if c.smart["/dev/test"] != want || len(c.smart) != 1 {
+	sleeping := want
+	sleeping.standby = true
+	if c.smart["/dev/test"] != sleeping || c.smart["/dev/new"] != (smartResult{standby: true}) || len(c.smart) != 2 {
 		t.Fatalf("standby: %+v", c.smart)
 	}
 	if logs.Len() != 0 {

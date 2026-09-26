@@ -1,4 +1,8 @@
 export default {
+diskStandby: "休眠",
+ledBlink: "{color}闪烁",
+ledStandbyHint: "休眠时优先使用此设置，可复用健康状态的颜色。约每秒切换亮灭；休眠状态随每分钟 SMART 检查更新，不会唤醒硬盘。",
+
     ledTitle: "硬盘状态灯",
     ledHint: "每个灯位绑定一块硬盘；未绑定、离线或无有效 SMART 数据时熄灭。",
     ledSettings: "LED 设置",

@@ -18,6 +18,7 @@ type LEDBinding struct {
 	UUID    string   `json:"uuid"`
 	UseUUID bool     `json:"useUUID"`
 	States  [3]uint8 `json:"states"`
+	Standby uint8    `json:"standby"` // 0=熄灭，1=color0 闪烁，2=color1 闪烁。
 }
 
 // LEDConfig 保存四个灯位的颜色及硬盘绑定。
@@ -55,10 +56,13 @@ func validateLEDConfig(c LEDConfig) error {
 		}
 		b := c.Bindings[i]
 		if b.Path == "" {
-			if b.UUID != "" || b.UseUUID || b.States != [3]uint8{} {
+			if b.UUID != "" || b.UseUUID || b.States != [3]uint8{} || b.Standby != 0 {
 				return fmt.Errorf("LED %d has an incomplete binding", i+1)
 			}
 			continue
+		}
+		if b.Standby > 2 {
+			return errors.New("standby LED must be off, color0 blink or color1 blink")
 		}
 		if len(b.Path) > 256 || len(b.UUID) > 256 {
 			return errors.New("disk identity is too long")
@@ -105,30 +109,46 @@ func diskForLEDBinding(b LEDBinding, disks []Disk) *Disk {
 	return found
 }
 
-// diskLEDStates 为无绑定、离线或无有效 SMART 数据的灯位返回关闭状态。
-func diskLEDStates(c LEDConfig, disks []Disk) [4]uint8 {
+// diskLEDStates 优先处理休眠显示；无绑定、离线或活动但无有效健康数据时关闭。
+func diskLEDStates(c LEDConfig, disks []Disk, blinkOn bool) [4]uint8 {
 	var states [4]uint8
 	usedDisks := make(map[string]bool)
 	for i, binding := range c.Bindings {
 		disk := diskForLEDBinding(binding, disks)
-		if disk == nil || !disk.SMARTAvailable || disk.Status > 2 || usedDisks[disk.Path] {
+		if disk == nil || usedDisks[disk.Path] {
 			continue
 		}
-		states[i] = binding.States[disk.Status]
 		usedDisks[disk.Path] = true
+		if disk.Standby {
+			if blinkOn {
+				states[i] = binding.Standby
+			}
+			continue
+		}
+		if disk.SMARTAvailable && disk.Status <= 2 {
+			states[i] = binding.States[disk.Status]
+		}
 	}
 	return states
 }
 
 // responseLEDState 每帧重新计算状态；测试只覆盖一个灯位，并在截止时间后自动恢复。
 func (s *Service) responseLEDState(cfg LEDConfig, snapshot Snapshot, now time.Time) uint8 {
-	states := diskLEDStates(cfg, snapshot.Disks)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// 每秒切换一次，按实际回复推进，避免请求周期与绝对时钟相位重合而不闪烁。
+	if s.ledBlinkAt.IsZero() {
+		s.ledBlinkOn = true
+		s.ledBlinkAt = now
+	} else if now.Sub(s.ledBlinkAt) >= time.Second {
+		s.ledBlinkOn = !s.ledBlinkOn
+		s.ledBlinkAt = now
+	}
+	states := diskLEDStates(cfg, snapshot.Disks, s.ledBlinkOn)
 	// 采集线程停止更新时不能持续展示旧健康状态。
 	if snapshot.UpdatedAt.IsZero() || now.Sub(snapshot.UpdatedAt) > 30*time.Second {
 		states = [4]uint8{}
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	if now.Before(s.ledTestUntil) {
 		states[s.ledTestPosition] = s.ledTestState
 	}

@@ -42,6 +42,7 @@ type Network struct {
 
 // Disk describes one physical storage device.
 type Disk struct {
+	Standby        bool   `json:"standby"`
 	UUID           string `json:"uuid"`
 	SMARTAvailable bool   `json:"smartAvailable"`
 	Path           string `json:"path"`
@@ -77,6 +78,7 @@ type networkSample struct {
 }
 
 type smartResult struct {
+	standby     bool
 	healthKnown bool
 	temperature uint8
 	status      uint8
@@ -381,9 +383,9 @@ func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []s
 		if result, err := readSMART(ctx, device); err == nil {
 			c.smart[device] = result
 		} else if errors.Is(err, errSMARTStandby) {
-			if cached, ok := previous[device]; ok {
-				c.smart[device] = cached
-			}
+			cached := previous[device]
+			cached.standby = true
+			c.smart[device] = cached
 		} else {
 			c.logger.Warn("SMART data unavailable", "device", device, "error", err)
 		}
@@ -393,6 +395,7 @@ func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []s
 
 // applySMART 将有效 SMART 结果及健康状态可用性应用到磁盘快照。
 func applySMART(storage *Disk, smart smartResult) {
+	storage.Standby = smart.standby
 	storage.SMARTAvailable = smart.healthKnown
 	storage.Status = smart.status
 	storage.PowerOnHours = smart.hours

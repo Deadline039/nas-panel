@@ -1,4 +1,8 @@
 export default {
+diskStandby: "Standby",
+ledBlink: "Blink {color}",
+ledStandbyHint: "Overrides cached health while asleep. Colors may also be used for health states. Toggles about once per second; standby is refreshed by the non-waking SMART check every minute.",
+
     ledTitle: "Disk status LEDs",
     ledHint: "One disk per LED. Unbound, offline or unavailable SMART data turns the LED off.",
     ledSettings: "LED settings",

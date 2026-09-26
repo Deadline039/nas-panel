@@ -16,17 +16,17 @@ func TestDiskLEDMapping(t *testing.T) {
 	cfg.Bindings[0] = LEDBinding{Path: "/dev/sdb", UUID: "wwn-A", UseUUID: true, States: [3]uint8{2, 3, 1}}
 	for status, want := range []uint8{2, 3, 1} {
 		disks := []Disk{{Path: "/dev/sdz", UUID: "wwn-A", Status: uint8(status), SMARTAvailable: true}}
-		if got := diskLEDStates(cfg, disks); got != [4]uint8{want, 0, 0, 0} {
+		if got := diskLEDStates(cfg, disks, true); got != [4]uint8{want, 0, 0, 0} {
 			t.Fatalf("status %d: %v", status, got)
 		}
 	}
 	for _, disks := range [][]Disk{nil, {{Path: "/dev/sdb", UUID: "wwn-B", SMARTAvailable: true}}, {{Path: "/dev/sdz", UUID: "wwn-A"}}} {
-		if got := diskLEDStates(cfg, disks); got != [4]uint8{} {
+		if got := diskLEDStates(cfg, disks, true); got != [4]uint8{} {
 			t.Fatalf("expected off: %v", got)
 		}
 	}
 	cfg.Bindings[0].UseUUID = false
-	if got := diskLEDStates(cfg, []Disk{{Path: "/dev/sdb", SMARTAvailable: true, Status: 1}}); got[0] != 3 {
+	if got := diskLEDStates(cfg, []Disk{{Path: "/dev/sdb", SMARTAvailable: true, Status: 1}}, true); got[0] != 3 {
 		t.Fatal(got)
 	}
 }
@@ -161,5 +161,50 @@ func TestStableDiskIDs(t *testing.T) {
 	}
 	if got := diskStableIDs(ids)[renamed]; got != "wwn-ABC" {
 		t.Fatal(got)
+	}
+}
+
+// TestStandbyLED 验证无缓存休眠盘、休眠优先级、闪烁、唤醒及离线关闭。
+func TestStandbyLED(t *testing.T) {
+	now := time.Now()
+	for _, mode := range []uint8{0, 1, 2} {
+		cfg := defaultLEDConfig()
+		cfg.Bindings[2] = LEDBinding{Path: "/dev/sdb", States: [3]uint8{2, 3, 1}, Standby: mode}
+		if err := validateLEDConfig(cfg); err != nil {
+			t.Fatal(err)
+		}
+		s := &Service{}
+		snapshot := Snapshot{UpdatedAt: now, Disks: []Disk{{Path: "/dev/sdb", Standby: true}}}
+		for i, want := range []uint8{mode << 4, 0, mode << 4} {
+			if got := s.responseLEDState(cfg, snapshot, now.Add(time.Duration(i)*time.Second)); got != want {
+				t.Fatalf("mode %d phase %d: got %x want %x", mode, i, got, want)
+			}
+		}
+		snapshot.Disks[0].SMARTAvailable = true
+		snapshot.Disks[0].Status = 2
+		if got := diskLEDStates(cfg, snapshot.Disks, true); got[2] != mode {
+			t.Fatal("cached failure overrode standby")
+		}
+		snapshot.Disks[0].Standby = false
+		if got := s.responseLEDState(cfg, snapshot, now.Add(3*time.Second)); got != 1<<4 {
+			t.Fatal("wake did not restore health")
+		}
+		snapshot.Disks = nil
+		if got := s.responseLEDState(cfg, snapshot, now.Add(4*time.Second)); got != 0 {
+			t.Fatal("offline did not turn off")
+		}
+		cfg.Bindings[2].Standby = 3
+		if validateLEDConfig(cfg) == nil {
+			t.Fatal("accepted invalid standby mode")
+		}
+	}
+}
+
+// TestApplyStandbySMART 无历史健康数据也必须发布休眠状态。
+func TestApplyStandbySMART(t *testing.T) {
+	var disk Disk
+	applySMART(&disk, smartResult{standby: true})
+	if !disk.Standby || disk.SMARTAvailable {
+		t.Fatalf("unexpected disk %+v", disk)
 	}
 }

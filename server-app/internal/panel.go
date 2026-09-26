@@ -47,6 +47,8 @@ type Service struct {
 	hidOpen          bool
 	firmwareSerial   string
 	ledState         uint8
+	ledBlinkAt       time.Time
+	ledBlinkOn       bool
 	ledTestUntil     time.Time
 	ledTestPosition  int
 	ledTestState     uint8

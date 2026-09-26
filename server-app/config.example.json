@@ -34,25 +34,29 @@
         "path": "",
         "uuid": "",
         "useUUID": false,
-        "states": [0, 0, 0]
+        "states": [0, 0, 0],
+      "standby": 0
       },
       {
         "path": "",
         "uuid": "",
         "useUUID": false,
-        "states": [0, 0, 0]
+        "states": [0, 0, 0],
+      "standby": 0
       },
       {
         "path": "",
         "uuid": "",
         "useUUID": false,
-        "states": [0, 0, 0]
+        "states": [0, 0, 0],
+      "standby": 0
       },
       {
         "path": "",
         "uuid": "",
         "useUUID": false,
-        "states": [0, 0, 0]
+        "states": [0, 0, 0],
+      "standby": 0
       }
     ]
   }

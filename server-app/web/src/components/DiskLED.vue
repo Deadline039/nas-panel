@@ -4,7 +4,7 @@ import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 const props = defineProps({ disks: { type: Array, default: () => [] }, connected: Boolean, t: Function, apiBase: String })
 const emit = defineEmits(['saved'])
 const clone = (v) => JSON.parse(JSON.stringify(v))
-const emptyBinding = () => ({ path: '', uuid: '', useUUID: false, states: [0, 0, 0] })
+const emptyBinding = () => ({ path: '', uuid: '', useUUID: false, states: [0, 0, 0], standby: 0 })
 const config = ref(null)
 const calibration = ref(null)
 const binding = ref(null)
@@ -37,6 +37,9 @@ function nameOfState(position, state, colors = config.value?.colors) {
   if (!state || !colors) return props.t('ledOff')
   const c = colors[position]
   return [state & 1 ? props.t('ledColor_' + c.color0) : '', state & 2 ? props.t('ledColor_' + c.color1) : ''].filter(Boolean).join(' + ')
+}
+function standbyLabel(position, mode) {
+  return mode ? props.t('ledBlink', { color: nameOfState(position, mode) }) : props.t('ledOff')
 }
 function openCalibration() { error.value = ''; calibration.value = clone(config.value) }
 function syncColors() {
@@ -74,6 +77,7 @@ function editBinding(disk) {
     disk, old, position: old >= 0 ? old : 0,
     useUUID: old >= 0 ? config.value.bindings[old].useUUID : false,
     states: old >= 0 ? [...config.value.bindings[old].states] : [2, 3, 1],
+    standby: old >= 0 ? config.value.bindings[old].standby || 0 : 0,
   }
 }
 function changeState(index, event) {
@@ -93,7 +97,7 @@ async function saveBinding() {
   }
   const next = clone(config.value)
   if (edit.old >= 0) next.bindings[edit.old] = emptyBinding()
-  next.bindings[edit.position] = { path: edit.disk.path, uuid: edit.disk.uuid || '', useUUID: edit.useUUID, states: [...edit.states] }
+  next.bindings[edit.position] = { path: edit.disk.path, uuid: edit.disk.uuid || '', useUUID: edit.useUUID, states: [...edit.states], standby: edit.standby }
   if (await persist(next)) binding.value = null
 }
 async function unbind(position) {
@@ -113,7 +117,7 @@ async function unbind(position) {
         <div v-for="(b, index) in config.bindings" :key="index" class="led-slot">
           <strong>LED {{ index + 1 }}</strong>
           <span>{{ b.path ? owner(b)?.path || b.path : t('ledUnbound') }}</span>
-          <small>{{ !b.path ? t('ledOff') : !owner(b) ? t('ledOffline') : !owner(b).smartAvailable ? t('ledUnknown') : nameOfState(index, b.states[owner(b).status]) }}</small>
+          <small>{{ !b.path ? t('ledOff') : !owner(b) ? t('ledOffline') : owner(b).standby ? t('diskStandby') + ' · ' + standbyLabel(index, b.standby) : !owner(b).smartAvailable ? t('ledUnknown') : nameOfState(index, b.states[owner(b).status]) }}</small>
           <button v-if="b.path" class="secondary" :disabled="saving" @click="unbind(index)">{{ t('ledUnbind') }}</button>
         </div>
       </div>
@@ -122,7 +126,7 @@ async function unbind(position) {
           <td><b>{{ disk.path }}</b></td>
           <td>{{ slotFor(disk) >= 0 ? `LED ${slotFor(disk) + 1}` : t('ledUnbound') }}</td>
           <td>{{ slotFor(disk) >= 0 && config.bindings[slotFor(disk)].useUUID ? t('ledStable') : t('ledPath') }}</td>
-          <td><template v-if="slotFor(disk) >= 0"><span v-for="(key, state) in ['diskGood','diskWarning','diskFailure']" :key="key" class="led-state-label">{{ t(key) }}: {{ nameOfState(slotFor(disk), config.bindings[slotFor(disk)].states[state]) }}</span></template><span v-else>—</span></td>
+          <td><template v-if="slotFor(disk) >= 0"><span v-for="(key, state) in ['diskGood','diskWarning','diskFailure']" :key="key" class="led-state-label">{{ t(key) }}: {{ nameOfState(slotFor(disk), config.bindings[slotFor(disk)].states[state]) }}</span><span class="led-state-label">{{ t('diskStandby') }}: {{ standbyLabel(slotFor(disk), config.bindings[slotFor(disk)].standby) }}</span></template><span v-else>—</span></td>
           <td><button class="secondary" :disabled="saving" @click="editBinding(disk)">{{ t('ledBind') }}</button></td>
         </tr>
         <tr v-if="!disks.length"><td colspan="5" class="empty">{{ t('noStorage') }}</td></tr>
@@ -155,6 +159,8 @@ async function unbind(position) {
         <small class="led-id">{{ binding.disk.uuid || t('ledNoUUID') }}</small><p>{{ t('ledUUIDHint') }}</p>
         <div class="led-mapping"><label v-for="(key, state) in ['diskGood','diskWarning','diskFailure']" :key="key" class="led-field">{{ t(key) }}<select :value="binding.states[state]" :disabled="saving" @change="changeState(state, $event)"><option v-for="value in [1,2,3]" :key="value" :value="value">{{ nameOfState(binding.position, value) }}</option></select></label></div>
         <p>{{ t('ledUniqueHint') }}</p>
+        <label class="led-field">{{ t('diskStandby') }}<select v-model.number="binding.standby" :disabled="saving"><option v-for="mode in [0,1,2]" :key="mode" :value="mode">{{ standbyLabel(binding.position, mode) }}</option></select></label>
+        <p>{{ t('ledStandbyHint') }}</p>
         <div class="led-actions"><button class="primary" :disabled="saving" @click="saveBinding">{{ saving ? t('saving') : t('save') }}</button></div>
       </template>
     </section>
@@ -162,7 +168,7 @@ async function unbind(position) {
 </template>
 
 <style scoped>
-.led-card { padding: 24px; margin-bottom: 18px; }
+.led-card { padding: 24px; margin-top: 18px; }
 .led-card p, .led-dialog p { color: var(--muted); font-size: 13px; line-height: 1.6; }
 .led-slots { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 20px 0; }
 .led-slot { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-wrap: anywhere; }
