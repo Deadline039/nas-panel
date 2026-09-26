@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/sstallion/go-hid"
@@ -20,7 +21,6 @@ func main() {
 	configPath := flag.String("config", "config.json", "configuration file path")
 	webDirectory := flag.String("web-dir", "web/dist", "built Vue application directory")
 	energyPath := flag.String("energy-file", "data/energy.json", "persistent energy data file")
-	listen := flag.String("listen", "", "override the configured HTTP listen address")
 	debug := flag.Bool("debug", false, "enable debug logging")
 	flag.Parse()
 
@@ -34,10 +34,7 @@ func main() {
 		logger.Error("load configuration", "error", err)
 		os.Exit(1)
 	}
-	address := store.Get().Listen
-	if *listen != "" {
-		address = *listen
-	}
+	address := ":" + strconv.Itoa(int(store.Get().WebPort))
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

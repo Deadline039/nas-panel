@@ -58,11 +58,10 @@ Web 翻译文件位于 `web/src/i18n/`，每种语言一个文件；新增语言
 
 ```json
 {
-  "listen": ":8080",
+  "webPort": 8080,
   "panelSerial": "676643860B34",
   "serverVersion": "0.1.0",
   "publicScheme": "https",
-  "publicPort": 443,
   "basePath": "/nas-panel",
   "links": [
     { "name": "Project", "url": "https://github.com/Deadline039/nas-panel" }
@@ -74,10 +73,11 @@ Web 翻译文件位于 `web/src/i18n/`，每种语言一个文件；新增语言
 }
 ```
 
-- `listen`：HTTP 监听地址，修改后重启生效。
+- `webPort`：Web 和 API 共用的端口（1～65535，默认 8080），监听所有本机地址。二维码自动使用同一端口，修改后保存并重启服务生效。旧的 `listen`、`publicPort` 字段及 `-listen` 启动参数已移除，不提供兼容迁移。
 - `panelSerial`：留空时连接第一块匹配的面板，修改后重启服务生效。
 - `serverVersion`：最多 9 个 UTF-8 字节，与 8 位 Git hash 组成 `v0.1.0(12345678)` 后发给面板。
-- `publicScheme`、`publicPort`、`basePath`：在 `config.json` 中设置网页的公开协议、端口和反代路径。服务根据每块物理网卡的 IPv4 地址自动生成二维码，例如 `https://192.168.1.10:443/nas-panel/`。
+- `publicScheme`、`basePath`：在 `config.json` 中设置二维码链接的公开协议和反代路径。服务根据每块物理网卡的 IPv4 地址自动生成二维码，例如 `https://192.168.1.10:8080/nas-panel/`。
+- 若反向代理的外部端口与 Web 端口不同，可在 `links` 添加完整的外部访问链接。
 - `links`：可选的额外二维码，排在自动生成的设置地址之后，每个 URL 最多 49 个 UTF-8 字节。
 - `fanCurves.cpu` 和 `fanCurves.hdd`：各 20 个 0～100 的 PWM 百分比。前 16 个值对应 25～100℃、每 5℃ 一档，后 4 个值跟随 100℃ 档以保持协议长度；数值必须单调不减。低于 25℃按 25℃处理，高于 100℃按 100℃处理。
 
@@ -186,7 +186,7 @@ root 模式不设置上述附加组和能力限制，同样保留 `NoNewPrivileg
 
 已有安装需更新 service 文件后运行 `sudo systemctl daemon-reload` 和
 `sudo systemctl restart nas-panel`；重新运行新版安装脚本也会更新服务文件并保留配置和耗电数据。
-服务启动时立即采集，之后 SMART 每分钟刷新。失败原因现在以 Warning 写入正常日志：
+服务启动时立即采集，之后 SMART 每分钟刷新。查询使用 `smartctl -n standby -a -j`，检测到待机或睡眠状态时跳过完整读取，不主动唤醒硬盘，也不将休眠跳过记录为告警。休眠期间保留本次服务运行中上次成功采集的 SMART 数据（温度等并非实时值）；尚无缓存时保留默认值，硬盘恢复活动后自动刷新。部分 USB 桥接或控制器不支持电源状态检查，仍需在实际设备上验证休眠行为。失败原因现在以 Warning 写入正常日志：
 
 ```sh
 sudo journalctl -u nas-panel -n 100 --no-pager

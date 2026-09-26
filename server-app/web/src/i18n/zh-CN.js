@@ -36,7 +36,7 @@ export default {
     hostName: '主机名', operatingSystem: '操作系统', processor: '处理器', memory: '内存', serverBuild: '服务构建', version: '版本', commit: 'Commit',
     panelConnection: '面板连接', product: '产品', serial: '序列号', transferState: '传输状态', normal: '传输正常', connecting: '正在连接', latestPage: '最近请求页面', itemIndex: '条目索引',
     accessAddresses: '设置页面地址', accessHint: '这些地址会作为 About 页二维码发送给 GD32。', automatic: '自动', custom: '自定义', noAddresses: '当前没有可用地址',
-    save: '保存设置', saving: '保存中…', saved: '已保存', listenAddress: '监听地址', restartRequired: '修改后重启服务生效', panelSerial: '面板序列号', autoSelect: '留空自动选择', serialHint: '多块面板时指定，重启后生效', serverVersion: '服务版本', publicScheme: '公开协议', schemeHint: '反向代理对外使用的协议', publicPort: '公开端口', portHint: '写入二维码的访问端口', proxyPath: '反代路径', proxyHint: '留空表示部署在根路径', automaticAddresses: '自动生成的设置地址', automaticHint: '根据物理网卡 IPv4、公开端口和反代路径生成。', extraLinks: '额外二维码链接', extraHint: '排在自动地址之后，由实体按键切换。', addLink: '添加链接', linkName: '名称', linkURL: '链接地址', removeLink: '删除链接', noLinks: '没有额外二维码链接',
+    save: '保存设置', saving: '保存中…', saved: '已保存', webPort: 'Web 端口', restartRequired: '网页与二维码共用此端口；保存后重启服务生效', panelSerial: '面板序列号', autoSelect: '留空自动选择', serialHint: '多块面板时指定，重启后生效', serverVersion: '服务版本', publicScheme: '公开协议', schemeHint: '反向代理对外使用的协议', proxyPath: '反代路径', proxyHint: '留空表示部署在根路径', automaticAddresses: '自动生成的设置地址', automaticHint: '根据物理网卡 IPv4、Web 端口和反代路径生成。', extraLinks: '额外二维码链接', extraHint: '排在自动地址之后，由实体按键切换。', addLink: '添加链接', linkName: '名称', linkURL: '链接地址', removeLink: '删除链接', noLinks: '没有额外二维码链接',
     bootEnergy: '当前开机耗电', totalEnergy: '累计总耗电', energyUnit: '度',
     language: '语言', theme: '主题', lightTheme: '浅色', darkTheme: '深色', page: '页面',
 }

@@ -338,7 +338,7 @@ func aboutLinks(snapshot Snapshot, cfg Config) []Link {
 		if network.Status != 2 || network.IPAddress == "" {
 			continue
 		}
-		address := fmt.Sprintf("%s://%s:%d", cfg.PublicScheme, network.IPAddress, cfg.PublicPort)
+		address := fmt.Sprintf("%s://%s:%d", cfg.PublicScheme, network.IPAddress, cfg.WebPort)
 		if cfg.BasePath != "" {
 			address += cfg.BasePath + "/"
 		}

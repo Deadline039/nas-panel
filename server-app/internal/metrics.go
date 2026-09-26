@@ -81,6 +81,8 @@ type smartResult struct {
 	cycles      uint32
 }
 
+var errSMARTStandby = errors.New("SMART check skipped: disk is in standby or sleep mode")
+
 type physicalBlockDevice struct {
 	name     string
 	path     string
@@ -343,10 +345,12 @@ func (c *Collector) mountedDisks(
 	return result
 }
 
+// refreshSMART 定期采集，休眠时保留上次数据，并清理已移除设备的缓存。
 func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []string) {
 	if now.Sub(c.lastSMART) < time.Minute {
 		return
 	}
+	previous := c.smart
 	c.smart = make(map[string]smartResult)
 	for _, device := range devices {
 		if _, exists := c.smart[device]; exists {
@@ -354,6 +358,10 @@ func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []s
 		}
 		if result, err := readSMART(ctx, device); err == nil {
 			c.smart[device] = result
+		} else if errors.Is(err, errSMARTStandby) {
+			if cached, ok := previous[device]; ok {
+				c.smart[device] = cached
+			}
 		} else {
 			c.logger.Warn("SMART data unavailable", "device", device, "error", err)
 		}
@@ -478,11 +486,11 @@ func temperatures(ctx context.Context) (uint8, uint8) {
 	return cpuTemperature, hddTemperature
 }
 
-// readSMART 读取磁盘 SMART，并保留权限、设备类型及超时等诊断信息。
+// readSMART 跳过待机或睡眠磁盘的 SMART 读取，并保留实际失败的诊断信息。
 func readSMART(parent context.Context, device string) (smartResult, error) {
 	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
 	defer cancel()
-	command := exec.CommandContext(ctx, "smartctl", "-a", "-j", device)
+	command := exec.CommandContext(ctx, "smartctl", "-n", "standby", "-a", "-j", device)
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	data, commandErr := command.Output()
@@ -510,6 +518,9 @@ func parseSMART(data []byte, stderr string, commandErr error) (smartResult, erro
 		Temperature struct {
 			Current int `json:"current"`
 		} `json:"temperature"`
+		PowerMode struct {
+			Name string `json:"name"`
+		} `json:"power_mode"`
 		PowerOnTime struct {
 			Hours uint64 `json:"hours"`
 		} `json:"power_on_time"`
@@ -530,6 +541,20 @@ func parseSMART(data []byte, stderr string, commandErr error) (smartResult, erro
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return smartResult{}, fmt.Errorf("invalid smartctl JSON: %w; stderr: %s", err, strings.TrimSpace(stderr))
+	}
+	// 退出码 2 也可能表示权限不足，必须结合电源状态或明确的跳过消息判断。
+	if raw.Smartctl.ExitStatus == 2 {
+		switch raw.PowerMode.Name {
+		case "STANDBY", "STANDBY_Y", "STANDBY_Z", "SLEEP":
+			return smartResult{}, errSMARTStandby
+		}
+		for _, message := range raw.Smartctl.Messages {
+			switch strings.TrimSpace(message.String) {
+			case "Device is in STANDBY mode, exit(2)", "Device is in SLEEP mode, exit(2)",
+				"Device is in STANDBY (OS) mode, exit(2)":
+				return smartResult{}, errSMARTStandby
+			}
+		}
 	}
 	result := smartResult{
 		temperature: temperature(float64(raw.Temperature.Current)),

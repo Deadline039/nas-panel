@@ -1,9 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"errors"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestParseSMART 验证用户硬盘输出中的字段、健康告警和失败诊断。
@@ -39,5 +46,74 @@ func TestParseSMART(t *testing.T) {
 				t.Fatalf("got %+v, %v; want %+v", result, err, tt.want)
 			}
 		})
+	}
+}
+
+// TestSMARTStandby 验证休眠状态与权限错误不会混淆。
+func TestSMARTStandby(t *testing.T) {
+	for _, data := range []string{
+		`{"smartctl":{"exit_status":2},"power_mode":{"name":"STANDBY"}}`,
+		`{"smartctl":{"exit_status":2},"power_mode":{"name":"SLEEP"}}`,
+		`{"smartctl":{"exit_status":2,"messages":[{"string":"Device is in STANDBY (OS) mode, exit(2)"}]}}`,
+		`{"smartctl":{"exit_status":2,"messages":[{"string":"Device is in STANDBY mode, exit(2)"}]}}`,
+	} {
+		if _, err := parseSMART([]byte(data), "", errors.New("exit status 2")); errors.Is(err, errSMARTStandby) == false {
+			t.Fatalf("expected standby for %s, got %v", data, err)
+		}
+	}
+}
+
+// TestSMARTStandbyCache 验证实际命令参数及活动、休眠、恢复采集时的缓存行为。
+func TestSMARTStandbyCache(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires a POSIX shell")
+	}
+	dir := t.TempDir()
+	script := `#!/bin/sh
+if [ "$#" -ne 5 ] || [ "$1" != "-n" ] || [ "$2" != standby ] || [ "$3" != "-a" ] || [ "$4" != "-j" ]; then
+ echo "unsafe SMART arguments" >&2
+ exit 1
+fi
+if [ "$SMART_TEST_MODE" = standby ]; then
+ echo '{"smartctl":{"exit_status":2},"power_mode":{"name":"STANDBY"}}'
+ exit 2
+fi
+if [ "$SMART_TEST_MODE" = denied ]; then
+ echo '{"smartctl":{"exit_status":2,"messages":[{"string":"Permission denied"}]}}'
+ exit 2
+fi
+echo '{"smartctl":{"exit_status":0},"smart_status":{"passed":true},"temperature":{"current":35},"power_on_time":{"hours":29052},"ata_smart_attributes":{"table":[{"id":4,"raw":{"value":6263}}]}}'
+`
+	if err := os.WriteFile(filepath.Join(dir, "smartctl"), []byte(script), 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("SMART_TEST_MODE", "active")
+	var logs bytes.Buffer
+	c := NewCollector(slog.New(slog.NewTextHandler(&logs, nil)))
+	now := time.Now()
+	c.refreshSMART(context.Background(), now, []string{"/dev/test"})
+	want := smartResult{temperature: 35, hours: 29052, cycles: 6263}
+	if c.smart["/dev/test"] != want {
+		t.Fatalf("active: %+v; logs: %s", c.smart, &logs)
+	}
+	c.smart["/dev/removed"] = want
+	t.Setenv("SMART_TEST_MODE", "standby")
+	c.refreshSMART(context.Background(), now.Add(time.Minute), []string{"/dev/test", "/dev/new"})
+	if c.smart["/dev/test"] != want || len(c.smart) != 1 {
+		t.Fatalf("standby: %+v", c.smart)
+	}
+	if logs.Len() != 0 {
+		t.Fatalf("unexpected standby warning: %s", &logs)
+	}
+	t.Setenv("SMART_TEST_MODE", "denied")
+	c.refreshSMART(context.Background(), now.Add(2*time.Minute), []string{"/dev/test"})
+	if len(c.smart) != 0 || strings.Contains(logs.String(), "Permission denied") == false {
+		t.Fatalf("permission: %+v; logs: %s", c.smart, &logs)
+	}
+	t.Setenv("SMART_TEST_MODE", "active")
+	c.refreshSMART(context.Background(), now.Add(3*time.Minute), []string{"/dev/test"})
+	if c.smart["/dev/test"] != want {
+		t.Fatalf("resume: %+v", c.smart)
 	}
 }

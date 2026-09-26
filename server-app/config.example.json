@@ -1,9 +1,8 @@
 {
-  "listen": ":8080",
+  "webPort": 8080,
   "panelSerial": "",
   "serverVersion": "0.1.0",
   "publicScheme": "http",
-  "publicPort": 8080,
   "basePath": "",
   "links": [],
   "fanCurves": {

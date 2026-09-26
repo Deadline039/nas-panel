@@ -40,11 +40,10 @@ func (curve *FanCurve) UnmarshalJSON(data []byte) error {
 
 // Config contains user-editable server settings.
 type Config struct {
-	Listen        string    `json:"listen"`
+	WebPort       uint16    `json:"webPort"`
 	PanelSerial   string    `json:"panelSerial"`
 	ServerVersion string    `json:"serverVersion"`
 	PublicScheme  string    `json:"publicScheme"`
-	PublicPort    uint16    `json:"publicPort"`
 	BasePath      string    `json:"basePath"`
 	Links         []Link    `json:"links"`
 	FanCurves     FanCurves `json:"fanCurves"`
@@ -60,10 +59,9 @@ type Store struct {
 // Default returns a usable configuration for a local installation.
 func Default() Config {
 	return Config{
-		Listen:        ":8080",
+		WebPort:       8080,
 		ServerVersion: "0.1.0",
 		PublicScheme:  "http",
-		PublicPort:    8080,
 		Links:         []Link{},
 		FanCurves:     defaultFanCurves(),
 	}
@@ -131,17 +129,14 @@ func (s *Store) Save(cfg Config) error {
 
 // Validate checks limits imposed by the firmware protocol.
 func Validate(cfg Config) error {
-	if strings.TrimSpace(cfg.Listen) == "" {
-		return errors.New("listen address is required")
+	if cfg.WebPort == 0 {
+		return errors.New("web port must be between 1 and 65535")
 	}
 	if len([]byte(cfg.ServerVersion)) > 9 {
 		return errors.New("server version must fit in 9 UTF-8 bytes")
 	}
 	if cfg.PublicScheme != "http" && cfg.PublicScheme != "https" {
 		return errors.New("public scheme must be http or https")
-	}
-	if cfg.PublicPort == 0 {
-		return errors.New("public port must be between 1 and 65535")
 	}
 	if cfg.BasePath != "" {
 		if strings.HasPrefix(cfg.BasePath, "/") == false {
