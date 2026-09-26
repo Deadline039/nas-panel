@@ -46,6 +46,23 @@ type Service struct {
 	bootRequested    bool
 	hidOpen          bool
 	firmwareSerial   string
+	ledState         uint8
+}
+
+// SetLEDs 设置四个双色灯：0=关闭、1=红色、2=蓝色、3=红蓝同时亮。
+// 状态在服务端编码成 74HC595 原始字节；暂不接入业务调用。
+func (s *Service) SetLEDs(states [4]uint8) error {
+	var encoded uint8
+	for index, state := range states {
+		if state > 3 {
+			return fmt.Errorf("LED %d state %d must be between 0 and 3", index, state)
+		}
+		encoded |= state << (2 * index)
+	}
+	s.mu.Lock()
+	s.ledState = encoded
+	s.mu.Unlock()
+	return nil
 }
 
 // NewService creates a panel service with shared configuration and metrics.
@@ -186,6 +203,9 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 			response = Response{Type: ResponseSetting, Setting: SettingBootloader}
 			settingRevision = 0
 		}
+		s.mu.RLock()
+		response.LEDState = s.ledState
+		s.mu.RUnlock()
 		frame, err := EncodeResponse(request.Sequence, response)
 		if err != nil {
 			s.setProtocolError(err)

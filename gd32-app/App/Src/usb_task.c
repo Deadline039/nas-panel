@@ -127,8 +127,8 @@ static void sample_power_fan(usb_data_report_t *report)
 }
 
 /**
- * @brief Request page data every second and publish matching replies to the UI task.
- * @param args Unused task argument.
+ * @brief 每秒请求页面数据，将有效回复发布到界面并原样输出 LED 字节。
+ * @param args 未使用的任务参数。
  */
 __NO_RETURN void usb_task(void *args)
 {
@@ -174,6 +174,8 @@ __NO_RETURN void usb_task(void *args)
         if (received == true) {
             bool response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
             if (response_valid == true) {
+                g_usb_data_resp.led_state = ((usb_data_resp_t *)rx_frame.payload)->led_state;
+                hc595_send_byte(g_usb_data_resp.led_state);
                 if (rx_frame.payload[0] == USB_DATA_RESPONSE_PAGE) {
                     g_usb_data_resp.valid = 1U;
                 }

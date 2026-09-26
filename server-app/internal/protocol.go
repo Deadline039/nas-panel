@@ -20,7 +20,7 @@ const (
 	PageSystem          = 3
 	PageAbout           = 4
 	PageCount           = 5
-	ResponsePrefix      = 5
+	ResponsePrefix      = 6
 	ResponsePage        = 0
 	ResponseSetting     = 1
 	SettingFanCurves    = 0
@@ -92,7 +92,7 @@ type AboutPayload struct {
 	ServerVersion string
 }
 
-// Response contains common temperatures and exactly one page payload.
+// Response 包含公共温度、LED 状态，以及页面或设置数据。
 type Response struct {
 	Type           uint8
 	Page           uint8
@@ -100,6 +100,7 @@ type Response struct {
 	SettingData    []byte
 	CPUTemperature uint8
 	HDDTemperature uint8
+	LEDState       uint8 // 每个双色灯占两位：bit 2*n 为红色，bit 2*n+1 为蓝色。
 	Overview       OverviewPayload
 	Network        NetworkPayload
 	Storage        StoragePayload
@@ -148,7 +149,7 @@ func DecodeRequest(frame []byte) (Request, error) {
 	return request, nil
 }
 
-// EncodeResponse encodes a page response in the firmware protocol layout.
+// EncodeResponse 编码页面或设置回复，每帧公共前缀都包含 LED 状态字节。
 func EncodeResponse(sequence uint32, response Response) ([FrameSize]byte, error) {
 	var frame [FrameSize]byte
 	payload := make([]byte, 0, PayloadSize)
@@ -163,13 +164,13 @@ func EncodeResponse(sequence uint32, response Response) ([FrameSize]byte, error)
 		if response.Setting == SettingFanCurves && len(response.SettingData) != FanCurvePayloadSize {
 			return frame, fmt.Errorf("fan curve payload size %d, want %d", len(response.SettingData), FanCurvePayloadSize)
 		}
-		payload = append(payload, response.Setting, response.CPUTemperature, response.HDDTemperature)
+		payload = append(payload, response.Setting, response.CPUTemperature, response.HDDTemperature, response.LEDState)
 		payload = append(payload, response.SettingData...)
 	} else if response.Type == ResponsePage {
 		if response.Page >= PageCount {
 			return frame, fmt.Errorf("unknown page %d", response.Page)
 		}
-		payload = append(payload, response.Page, response.CPUTemperature, response.HDDTemperature)
+		payload = append(payload, response.Page, response.CPUTemperature, response.HDDTemperature, response.LEDState)
 	} else {
 		return frame, fmt.Errorf("unknown response type %d", response.Type)
 	}

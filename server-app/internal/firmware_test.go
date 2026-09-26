@@ -65,8 +65,8 @@ func TestBootloaderCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if frame[0] != 1 || binary.LittleEndian.Uint32(frame[3:]) != 42 || binary.LittleEndian.Uint16(frame[7:]) != 5 || frame[10] != 1 || frame[12] != 1 || CRC8(frame[10:15]) != frame[9] {
-		t.Fatalf("invalid frame %x", frame[:15])
+	if frame[0] != 1 || binary.LittleEndian.Uint32(frame[3:]) != 42 || binary.LittleEndian.Uint16(frame[7:]) != ResponsePrefix || frame[10] != 1 || frame[12] != 1 || CRC8(frame[10:10+ResponsePrefix]) != frame[9] {
+		t.Fatalf("invalid frame %x", frame[:10+ResponsePrefix])
 	}
 	if _, err := EncodeResponse(42, Response{Type: ResponseSetting, Setting: SettingBootloader, SettingData: []byte{1}}); err == nil {
 		t.Fatal("accepted extra data")

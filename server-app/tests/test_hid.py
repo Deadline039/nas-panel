@@ -21,7 +21,8 @@ FAN_CURVE = bytes((0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 10
 
 HEADER = struct.Struct("<BBBIHB")
 REQUEST = struct.Struct("<BffBBB")
-RESPONSE = struct.Struct("<BBBBB")
+RESPONSE = struct.Struct("<BBBBBB")
+LED_STATE = 0xE4  # 灯 0 关闭、灯 1 红色、灯 2 蓝色、灯 3 红蓝同时亮。
 PAGE_DATA = (
     struct.Struct("<IBB12s"),
     struct.Struct("<BBB12sffff16s16s16s"),
@@ -137,21 +138,21 @@ def make_response(raw, sample):
     cpu_temperature = (34, 35, 49, 50, 69, 70, 84, 85)[sample % 8]
     hdd_temperature = (34, 35, 44, 45, 49, 50, 69, 70)[sample % 8]
     payload = RESPONSE.pack(
-        RESPONSE_PAGE_DATA, 1, page, cpu_temperature, hdd_temperature
+        RESPONSE_PAGE_DATA, 1, page, cpu_temperature, hdd_temperature, LED_STATE
     ) + make_page_data(page, sample, item_idx)
     return make_frame(FRAME_RESPONSE, sequence, payload)
 
 
 def make_fan_setting(sequence):
     """Build the raw CPU and HDD fan-curve setting response."""
-    payload = RESPONSE.pack(RESPONSE_SETTING, 1, SETTING_FAN_CURVES, 35, 40)
+    payload = RESPONSE.pack(RESPONSE_SETTING, 1, SETTING_FAN_CURVES, 35, 40, LED_STATE)
     payload += FAN_CURVE + FAN_CURVE
     return make_frame(FRAME_RESPONSE, sequence, payload)
 
 
 def self_check():
     """Check every request and response layout without opening a HID device."""
-    expected_sizes = (23, 84, 38, 197, 87)
+    expected_sizes = (24, 85, 39, 198, 88)
     for page, name in enumerate(PAGE_NAMES):
         request = make_frame(
             FRAME_REQUEST, 42, REQUEST.pack(page, 12.0, 1.25, 30, 40, 0)
@@ -166,6 +167,8 @@ def self_check():
         if header[4] != expected_sizes[page]:
             raise AssertionError(f"{name} payload size {header[4]} != {expected_sizes[page]}")
         payload = response[HEADER.size : HEADER.size + header[4]]
+        if payload[5] != LED_STATE:
+            raise AssertionError("LED state mismatch")
         if crc8(payload) != header[5]:
             raise AssertionError(f"{name} response CRC8 mismatch")
         print(

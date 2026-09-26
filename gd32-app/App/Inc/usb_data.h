@@ -50,6 +50,7 @@ typedef struct __attribute__((packed)) {
     uint8_t page_set;
     uint8_t cpu_temperature; /**< CPU temperature in degrees Celsius. */
     uint8_t hdd_temperature; /**< Highest disk temperature in degrees Celsius. */
+    uint8_t led_state;       /**< 74HC595 原始输出：bit 2*n 为第 n 个灯红色，bit 2*n+1 为蓝色。 */
     /**< Convert to the matching usb_data_xxx_t by page, or parsing in setting */
     void *data;
 } usb_data_resp_t;

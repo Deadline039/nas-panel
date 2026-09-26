@@ -45,18 +45,20 @@ HIDAPI `write()` 需额外前置 `0x00`，参数总长 257 字节；前置字节
 
 | page | 页面 | 回复结构体 | 字节数 | Python 格式 |
 | --- | --- | --- | --- | --- |
-| 0 | 概览 | `usb_data_resp_t` 前缀 + `usb_data_overview_t` | 11 | `<BBBBBIBB` |
-| 1 | 网络 | `usb_data_resp_t` 前缀 + `usb_data_network_t` | 84 | `<BBBBBBBB12sffff16s16s16s` |
-| 2 | 存储 | `usb_data_resp_t` 前缀 + `usb_data_disk_t` | 38 | `<BBBBBBB12sQBBBII` |
-| 3 | 系统信息 | `usb_data_resp_t` 前缀 + `usb_data_sys_info_t` | 197 | `<BBBBB12s80s50s50s` |
-| 4 | 关于/二维码 | `usb_data_resp_t` 前缀 + `usb_data_about_qrcode_t` | 87 | `<BBBBBBB50s30s` |
+| 0 | 概览 | `usb_data_resp_t` 前缀 + `usb_data_overview_t` | 24 | `<BBBBBBIBB12s` |
+| 1 | 网络 | `usb_data_resp_t` 前缀 + `usb_data_network_t` | 85 | `<BBBBBBBBB12sffff16s16s16s` |
+| 2 | 存储 | `usb_data_resp_t` 前缀 + `usb_data_disk_t` | 39 | `<BBBBBBBB12sQBBBII` |
+| 3 | 系统信息 | `usb_data_resp_t` 前缀 + `usb_data_sys_info_t` | 198 | `<BBBBBB12s80s50s50s` |
+| 4 | 关于/二维码 | `usb_data_resp_t` 前缀 + `usb_data_about_qrcode_t` | 88 | `<BBBBBBBB50s30s` |
 
 - 概览运行时间为 `uint32` 分钟，CPU/内存为百分比。
 - 网络速率和累计流量基础单位为 KB/s、KB，UI 按 1024 进位显示 KB/MB/GB/TB。这里 KB 沿用项目的 1024 字节口径。
 - About 页服务器版本按 `v0.1.0(12345678)` 格式传输，括号内是 8 位 Git commit hash。
 - 磁盘容量为 `uint64` 字节，UI 最低从 KB 显示。磁盘使用率为百分比，温度为摄氏度，使用时间为小时。
-- 每一个回复负载先放 5 字节前缀：`type`、`valid`、`page_set`、`cpu_temperature`、`hdd_temperature`，随后紧跟对应页面的数据。页面数据回复的 `type=0`、`valid=1`。`data` 是 GD32 收到数据后设置的本地指针，不在线上传输。
-- 风扇设置回复使用 `type=1`、`page_set=0`，5 字节前缀后直接放 40 字节数组：前 20 字节是 CPU 曲线，后 20 字节是 HDD 曲线。整个负载为 45 字节，没有额外设置结构体。
+- 每一个回复负载先放 6 字节前缀：`type`、`valid`、`page_set`、`cpu_temperature`、`hdd_temperature`、`led_state`，随后紧跟对应页面的数据。页面数据回复的 `type=0`、`valid=1`。`data` 是 GD32 收到数据后设置的本地指针，不在线上传输。
+- `led_state` 为 74HC595 的 1 字节原始输出，位于 payload 偏移 5（整帧偏移 15），纳入 length 和 CRC8。四个灯按驱动索引 0～3 排列，第 n 个灯的 bit 2*n 控制红色、bit 2*n+1 控制蓝色；每组 00=关闭、01=红色、10=蓝色、11=同时亮。页面和所有设置回复均携带该字节，GD32 校验回复后原样传给 `hc595_send_byte()`，不在线上传输闪烁策略。当前服务端未接入状态策略时默认发送 0。
+- 此次扩展仍使用 v1，但回复前缀由 5 字节改为 6 字节，服务端与固件必须配套更新，不兼容扩展前布局。服务端提供 `Service.SetLEDs([4]uint8)` 编码并更新四灯状态，当前仅测试调用，未接入业务逻辑。
+- 风扇设置回复使用 `type=1`、`page_set=0`，6 字节前缀后直接放 40 字节数组：前 20 字节是 CPU 曲线，后 20 字节是 HDD 曲线。整个负载为 46 字节，没有额外设置结构体。
 - 风扇曲线协议仍传 20 个字节，前 16 个档位覆盖 25～100℃、每 5℃ 一档，后 4 个字节跟随 100℃ 档。低于 25℃按 25℃处理，高于 100℃按 100℃处理。每一档 PWM 必须大于等于前一档。CPU 和 HDD 使用独立曲线，写入后保存在 GD32 Bank1 最后一个 4 KB Flash 页。
 - `idx` 从 0 开始，`total=0` 表示无条目。多条目由 GD32 的 item_idx 选择，NAS 必须原样回传 idx，禁止自动轮换。索引超出当前数量时，回复该 idx、最新 total，其余字段清零，GD32 调整索引后再次请求。
 - 磁盘状态：0=Good、1=Warning、2=Failure。网络 status：0=未连接、1=获取地址中、2=已连接。
@@ -86,7 +88,7 @@ cmake --build gd32-app/cmake-build-debug -j 6
 ## 从 APP 进入 DFU
 
 HID v1 新增设置项 `page_set=1`（`USB_DATA_SETTING_BOOTLOADER`）。
-回复 payload 仅 5 字节：`type=1, valid=1, page_set=1, cpu_temperature, hdd_temperature`，
+回复 payload 仅 6 字节：`type=1, valid=1, page_set=1, cpu_temperature, hdd_temperature, led_state`，
 不附加其他数据，仍匹配当前请求序号与 CRC8。APP 接收后调用 `bootloader_request_update()`，
 通过 BKP 标记复位到 `3939:3927` DFU 模式。此项与风扇曲线设置 `page_set=0` 独立。
 网页升级流程及依赖见 `server-app/README.md`。

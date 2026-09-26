@@ -67,22 +67,22 @@ static uint8_t led_state;
 /**
  * @brief HC595 set led
  * @param pos led position, 0~3
- * @param red red led status
- * @param blue blue led status
+ * @param color0 color0 led status
+ * @param color1 color1 led status
  */
-void hc595_set_led(uint8_t pos, uint8_t red, uint8_t blue)
+void hc595_set_led(uint8_t pos, uint8_t color0, uint8_t color1)
 {
     if (pos >= 4) {
         return;
     }
 
-    if (red) {
+    if (color0) {
         led_state |= 1U << (pos * 2);
     } else {
         led_state &= ~(1U << (pos * 2));
     }
 
-    if (blue) {
+    if (color1) {
         led_state |= 1U << (pos * 2 + 1);
     } else {
         led_state &= ~(1U << (pos * 2 + 1));

@@ -15,7 +15,7 @@ extern "C" {
 
 void hc595_init(void);
 void hc595_send_byte(uint8_t byte);
-void hc595_set_led(uint8_t pos, uint8_t red, uint8_t blue);
+void hc595_set_led(uint8_t pos, uint8_t color0, uint8_t color1);
 void hc595_set_led_off(void);
 
 #ifdef __cplusplus
