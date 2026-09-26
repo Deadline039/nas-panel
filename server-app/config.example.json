@@ -8,5 +8,52 @@
   "fanCurves": {
     "cpu": [0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
     "hdd": [0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+  },
+  "led": {
+    "sameColors": true,
+    "colors": [
+      {
+        "color0": "red",
+        "color1": "blue"
+      },
+      {
+        "color0": "red",
+        "color1": "blue"
+      },
+      {
+        "color0": "red",
+        "color1": "blue"
+      },
+      {
+        "color0": "red",
+        "color1": "blue"
+      }
+    ],
+    "bindings": [
+      {
+        "path": "",
+        "uuid": "",
+        "useUUID": false,
+        "states": [0, 0, 0]
+      },
+      {
+        "path": "",
+        "uuid": "",
+        "useUUID": false,
+        "states": [0, 0, 0]
+      },
+      {
+        "path": "",
+        "uuid": "",
+        "useUUID": false,
+        "states": [0, 0, 0]
+      },
+      {
+        "path": "",
+        "uuid": "",
+        "useUUID": false,
+        "states": [0, 0, 0]
+      }
+    ]
   }
 }

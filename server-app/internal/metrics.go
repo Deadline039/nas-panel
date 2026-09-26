@@ -42,14 +42,16 @@ type Network struct {
 
 // Disk describes one physical storage device.
 type Disk struct {
-	Path         string `json:"path"`
-	Mountpoint   string `json:"mountpoint"`
-	Capacity     uint64 `json:"capacity"`
-	UsedPercent  uint8  `json:"usedPercent"`
-	Status       uint8  `json:"status"`
-	Temperature  uint8  `json:"temperature"`
-	PowerOnHours uint32 `json:"powerOnHours"`
-	Cycles       uint32 `json:"cycles"`
+	UUID           string `json:"uuid"`
+	SMARTAvailable bool   `json:"smartAvailable"`
+	Path           string `json:"path"`
+	Mountpoint     string `json:"mountpoint"`
+	Capacity       uint64 `json:"capacity"`
+	UsedPercent    uint8  `json:"usedPercent"`
+	Status         uint8  `json:"status"`
+	Temperature    uint8  `json:"temperature"`
+	PowerOnHours   uint32 `json:"powerOnHours"`
+	Cycles         uint32 `json:"cycles"`
 }
 
 // Snapshot is the latest system state used by both transports.
@@ -75,6 +77,7 @@ type networkSample struct {
 }
 
 type smartResult struct {
+	healthKnown bool
 	temperature uint8
 	status      uint8
 	hours       uint32
@@ -104,6 +107,7 @@ type Collector struct {
 	lastNetScan time.Time
 	smart       map[string]smartResult
 	lastSMART   time.Time
+	diskIDs     map[string]string
 	logger      *slog.Logger
 }
 
@@ -247,6 +251,23 @@ func (c *Collector) linuxPhysicalDisks(
 	fallbackTemperature uint8,
 ) []Disk {
 	devices := physicalBlockDevices()
+	stableIDs := diskStableIDs("/dev/disk/by-id")
+	// 设备号复用时丢弃旧盘缓存；设备增减后立即刷新。
+	currentIDs := make(map[string]string, len(devices))
+	for _, device := range devices {
+		currentIDs[device.path] = stableIDs[device.path]
+		previousID, existed := c.diskIDs[device.path]
+		if !existed || previousID != currentIDs[device.path] {
+			delete(c.smart, device.path)
+			c.lastSMART = time.Time{}
+		}
+	}
+	for path := range c.diskIDs {
+		if _, exists := currentIDs[path]; !exists {
+			delete(c.smart, path)
+		}
+	}
+	c.diskIDs = currentIDs
 	devicePaths := make([]string, 0, len(devices))
 	physicalByName := make(map[string]physicalBlockDevice, len(devices))
 	for _, device := range devices {
@@ -288,6 +309,7 @@ func (c *Collector) linuxPhysicalDisks(
 	for _, device := range devices {
 		storage := Disk{
 			Path:        device.path,
+			UUID:        stableIDs[device.path],
 			Capacity:    device.capacity,
 			Temperature: fallbackTemperature,
 		}
@@ -369,7 +391,9 @@ func (c *Collector) refreshSMART(ctx context.Context, now time.Time, devices []s
 	c.lastSMART = now
 }
 
+// applySMART 将有效 SMART 结果及健康状态可用性应用到磁盘快照。
 func applySMART(storage *Disk, smart smartResult) {
+	storage.SMARTAvailable = smart.healthKnown
 	storage.Status = smart.status
 	storage.PowerOnHours = smart.hours
 	storage.Cycles = smart.cycles
@@ -394,6 +418,10 @@ func physicalBlockDevices() []physicalBlockDevice {
 			continue
 		}
 		if _, err := os.Stat(filepath.Join(classPath, "device")); err != nil {
+			continue
+		}
+		// SCSI/SATA 离线设备即使仍有 sysfs 节点，也不应继续展示缓存的健康状态。
+		if state, err := os.ReadFile(filepath.Join(classPath, "device", "state")); err == nil && strings.TrimSpace(string(state)) == "offline" {
 			continue
 		}
 		data, err := os.ReadFile(filepath.Join(classPath, "size"))
@@ -536,7 +564,7 @@ func parseSMART(data []byte, stderr string, commandErr error) (smartResult, erro
 			Passed *bool `json:"passed"`
 		} `json:"smart_status"`
 		NVMeHealth struct {
-			CriticalWarning uint8 `json:"critical_warning"`
+			CriticalWarning *uint8 `json:"critical_warning"`
 		} `json:"nvme_smart_health_information_log"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -557,6 +585,7 @@ func parseSMART(data []byte, stderr string, commandErr error) (smartResult, erro
 		}
 	}
 	result := smartResult{
+		healthKnown: raw.SMARTStatus.Passed != nil || raw.NVMeHealth.CriticalWarning != nil,
 		temperature: temperature(float64(raw.Temperature.Current)),
 		hours:       clampUint32(raw.PowerOnTime.Hours),
 	}
@@ -569,10 +598,10 @@ func parseSMART(data []byte, stderr string, commandErr error) (smartResult, erro
 	}
 	if raw.SMARTStatus.Passed != nil && *raw.SMARTStatus.Passed == false {
 		result.status = 2
-	} else if raw.NVMeHealth.CriticalWarning != 0 {
+	} else if raw.NVMeHealth.CriticalWarning != nil && *raw.NVMeHealth.CriticalWarning != 0 {
 		result.status = 1
 	}
-	if raw.SMARTStatus.Passed == nil && result.temperature == 0 && result.hours == 0 && result.cycles == 0 {
+	if !result.healthKnown && result.temperature == 0 && result.hours == 0 && result.cycles == 0 {
 		messages := make([]string, 0, len(raw.Smartctl.Messages)+1)
 		for _, message := range raw.Smartctl.Messages {
 			if message.String != "" {

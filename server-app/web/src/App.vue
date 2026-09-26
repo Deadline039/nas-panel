@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 import { translate } from './i18n/index.js'
+import DiskLED from './components/DiskLED.vue'
 
 
 const storedLocale = window.localStorage.getItem('nas-panel-locale')
@@ -318,6 +319,7 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
       <section v-else-if="activePage === 'network'" class="page-content"><article class="panel-card table-card"><div class="section-head"><h3>{{ t('network') }}</h3><code>{{ t('physicalInterfaces', { count: system.networks?.length || 0 }) }}</code></div><div class="table-wrap"><table><thead><tr><th>{{ t('interface') }}</th><th>{{ t('state') }}</th><th>{{ t('address') }}</th><th>{{ t('netmask') }}</th><th>{{ t('gateway') }}</th><th>{{ t('upload') }}</th><th>{{ t('download') }}</th><th>{{ t('totalTraffic') }}</th></tr></thead><tbody><tr v-for="network in system.networks" :key="network.name"><td><b>{{ network.name }}</b></td><td><span class="state" :class="`state-${network.status}`"><i></i>{{ networkState(network.status) }}</span></td><td>{{ network.ipAddress || '--' }}</td><td>{{ network.netmask || '--' }}</td><td>{{ network.gateway || '--' }}</td><td>{{ formatKB(network.uploadRateKB, true) }}</td><td>{{ formatKB(network.downloadRateKB, true) }}</td><td>{{ formatKB(network.uploadTotalKB + network.downloadTotalKB) }}</td></tr><tr v-if="!system.networks?.length"><td colspan="8" class="empty">{{ t('noNetwork') }}</td></tr></tbody></table></div></article></section>
 
       <section v-else-if="activePage === 'storage'" class="page-content">
+        <DiskLED :disks="system.disks || []" :connected="panel.connected === true" :t="t" :api-base="pageBase" @saved="form.led = $event" />
         <article class="panel-card table-card">
           <div class="section-head"><h3>{{ t('storage') }}</h3><code>{{ t('physicalDisks', { count: system.disks?.length || 0 }) }}</code></div>
           <div class="table-wrap"><table><thead><tr><th>{{ t('device') }}</th><th>{{ t('mountpoint') }}</th><th>{{ t('capacity') }}</th><th>{{ t('usage') }}</th><th>{{ t('health') }}</th><th>{{ t('temperature') }}</th><th>{{ t('powerOnHours') }}</th><th>{{ t('cycles') }}</th></tr></thead><tbody>

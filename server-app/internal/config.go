@@ -40,6 +40,7 @@ func (curve *FanCurve) UnmarshalJSON(data []byte) error {
 
 // Config contains user-editable server settings.
 type Config struct {
+	LED           LEDConfig `json:"led"`
 	WebPort       uint16    `json:"webPort"`
 	PanelSerial   string    `json:"panelSerial"`
 	ServerVersion string    `json:"serverVersion"`
@@ -60,6 +61,7 @@ type Store struct {
 func Default() Config {
 	return Config{
 		WebPort:       8080,
+		LED:           defaultLEDConfig(),
 		ServerVersion: "0.1.0",
 		PublicScheme:  "http",
 		Links:         []Link{},
@@ -83,6 +85,7 @@ func Load(path string) (*Store, error) {
 	if err := json.Unmarshal(data, &store.cfg); err != nil {
 		return nil, fmt.Errorf("decode config: %w", err)
 	}
+	normalizeLEDColors(&store.cfg.LED)
 	normalized := normalizeStoredFanCurves(&store.cfg.FanCurves)
 	if err := Validate(store.cfg); err != nil {
 		return nil, fmt.Errorf("validate config: %w", err)
@@ -104,6 +107,23 @@ func (s *Store) Get() Config {
 
 // Save validates, persists, and publishes a configuration atomically.
 func (s *Store) Save(cfg Config) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.saveLocked(cfg)
+}
+
+// SaveLED 仅更新 LED 设置，避免覆盖并发保存的其他配置。
+func (s *Store) SaveLED(led LEDConfig) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	cfg := clone(s.cfg)
+	cfg.LED = led
+	return s.saveLocked(cfg)
+}
+
+// saveLocked 在配置锁内验证并原子持久化。
+func (s *Store) saveLocked(cfg Config) error {
+	normalizeLEDColors(&cfg.LED)
 	if err := Validate(cfg); err != nil {
 		return err
 	}
@@ -121,14 +141,15 @@ func (s *Store) Save(cfg Config) error {
 	if err := os.Rename(temporary, s.path); err != nil {
 		return fmt.Errorf("replace config: %w", err)
 	}
-	s.mu.Lock()
 	s.cfg = clone(cfg)
-	s.mu.Unlock()
 	return nil
 }
 
 // Validate checks limits imposed by the firmware protocol.
 func Validate(cfg Config) error {
+	if err := validateLEDConfig(cfg.LED); err != nil {
+		return err
+	}
 	if cfg.WebPort == 0 {
 		return errors.New("web port must be between 1 and 65535")
 	}
