@@ -284,7 +284,7 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
 <template>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-mark"><span></span><span></span><span></span></div><h1>NAS Panel</h1></div>
+      <div class="brand"><img class="brand-icon" :src="'./icon.svg'" alt="" width="39" height="39"><h1>NAS Panel</h1></div>
       <nav class="page-tabs" :aria-label="t('page')">
         <button v-for="page in pages" :key="page.id" :class="{ active: activePage === page.id }" @click="activePage = page.id"><strong>{{ page.label }}</strong></button>
       </nav>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>NAS Panel</title>
+  <defs>
+    <linearGradient id="case" x1="8" y1="4" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#183C53"/>
+      <stop offset="1" stop-color="#091923"/>
+    </linearGradient>
+    <linearGradient id="drive" x1="15" y1="14" x2="41" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#77D9FF"/>
+      <stop offset="1" stop-color="#258EE8"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#case)"/>
+  <rect x="3" y="3" width="58" height="58" rx="14" stroke="#61C7FA" stroke-opacity=".35" stroke-width="2"/>
+  <path d="M17 17H36M17 27H36M17 37H36M17 47H36" stroke="url(#drive)" stroke-width="6" stroke-linecap="round"/>
+  <g fill="#58DAB5">
+    <circle cx="47" cy="17" r="3"/>
+    <circle cx="47" cy="27" r="3"/>
+    <circle cx="47" cy="37" r="3"/>
+    <circle cx="47" cy="47" r="3"/>
+  </g>
+</svg>
