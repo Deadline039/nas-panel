@@ -8,7 +8,12 @@ import DiskLED from './components/DiskLED.vue'
 const storedLocale = window.localStorage.getItem('nas-panel-locale')
 const locale = ref(storedLocale === 'en-US' ? 'en-US' : 'zh-CN')
 const storedTheme = window.localStorage.getItem('nas-panel-theme')
-const theme = ref(storedTheme === 'light' ? 'light' : 'dark')
+const theme = ref(['light', 'dark', 'system'].includes(storedTheme) ? storedTheme : 'system')
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+const systemDark = ref(systemTheme.matches)
+const resolvedTheme = computed(() => theme.value === 'system' ? (systemDark.value ? 'dark' : 'light') : theme.value)
+const themeLabel = computed(() => t({ system: 'systemTheme', light: 'lightTheme', dark: 'darkTheme' }[theme.value]))
+function updateSystemTheme(event) { systemDark.value = event.matches }
 const activePage = ref('overview')
 const status = ref(null)
 const loadError = ref('')
@@ -186,7 +191,7 @@ function cloneConfig(config) {
 }
 function addLink() { form.links.push({ name: `Link ${form.links.length + 1}`, url: 'https://' }) }
 function removeLink(index) { form.links.splice(index, 1) }
-function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark' }
+function toggleTheme() { theme.value = { system: 'light', light: 'dark', dark: 'system' }[theme.value] }
 
 function fanPointX(index) { return 40 + (940 * index / (fanCurveVisiblePoints - 1)) }
 function fanPointY(value) { return 220 - Math.max(0, Math.min(100, Number(value))) * 2 }
@@ -285,8 +290,10 @@ function byteLength(value) { return new TextEncoder().encode(value ?? '').length
 function temperatureClass(value) { return Number(value) >= 85 ? 'bad' : Number(value) >= 50 ? 'warn' : 'good' }
 function usageClass(value) { return Number(value) >= 90 ? 'bad-progress' : Number(value) >= 75 ? 'warn-progress' : '' }
 
-watch(theme, (value) => {
+watch(resolvedTheme, (value) => {
   document.documentElement.dataset.theme = value
+}, { immediate: true })
+watch(theme, (value) => {
   window.localStorage.setItem('nas-panel-theme', value)
 }, { immediate: true })
 watch(locale, (value) => {
@@ -295,10 +302,15 @@ watch(locale, (value) => {
 }, { immediate: true })
 
 onMounted(() => {
+  systemTheme.addEventListener('change', updateSystemTheme)
+  systemDark.value = systemTheme.matches
   loadStatus(true)
   refreshTimer = window.setInterval(loadStatus, 2000)
 })
-onBeforeUnmount(() => window.clearInterval(refreshTimer))
+onBeforeUnmount(() => {
+  window.clearInterval(refreshTimer)
+  systemTheme.removeEventListener('change', updateSystemTheme)
+})
 </script>
 
 <template>
@@ -312,7 +324,7 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
         <div class="connection" :class="{ online: panel.connected }"><i></i><span>{{ panel.connected ? t('panelOnline') : t('waitingPanel') }}</span></div>
         <div class="sidebar-controls">
           <label><span>{{ t('language') }}</span><select v-model="locale"><option value="zh-CN">中文</option><option value="en-US">English</option></select></label>
-          <button class="theme-toggle" :aria-label="t('theme')" @click="toggleTheme"><span>{{ theme === 'dark' ? '☾' : '☀' }}</span>{{ theme === 'dark' ? t('darkTheme') : t('lightTheme') }}</button>
+          <button class="theme-toggle" :aria-label="`${t('theme')}: ${themeLabel}`" :title="themeLabel" @click="toggleTheme"><span aria-hidden="true">{{ theme === 'system' ? '◐' : theme === 'dark' ? '☾' : '☀' }}</span>{{ themeLabel }}</button>
         </div>
       </div>
     </aside>
