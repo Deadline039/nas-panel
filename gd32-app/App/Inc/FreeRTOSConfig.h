@@ -138,7 +138,7 @@ extern uint32_t SystemCoreClock;
 
 //  <q>Use Idle hook function
 //  <i> Call vApplicationIdleHook hook function when idle
-#define configUSE_IDLE_HOOK                       0
+#define configUSE_IDLE_HOOK                       1
 
 //  <q>Use Tick hook function
 //  <i> Call vApplicationTickHook hook function when each tick interrupt occurs

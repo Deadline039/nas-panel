@@ -5,6 +5,7 @@
  */
 
 #include <gd32f30x.h>
+#include <gd32f30x_fwdgt.h>
 #include <bsp.h>
 
 extern void rtos_start(void);
@@ -24,7 +25,16 @@ int main(void)
     ina219_dev_init();
     hc595_init();
 
+    fwdgt_config(781U, FWDGT_PSC_DIV256);
     rtos_start();
 
     return 0;
+}
+
+/**
+ * @brief Reload the watchdog while the FreeRTOS idle task is scheduled.
+ */
+void vApplicationIdleHook(void)
+{
+    fwdgt_counter_reload();
 }
