@@ -78,7 +78,7 @@ jobs:
         shell: bash
         working-directory: server-app/internal
         run: |
-          version=$(git describe --tags --always)
+          version=$(git describe --tags --abbrev=0 2>/dev/null || echo dev)
           commit=$(git rev-parse --short=8 HEAD)
           CGO_ENABLED=1 go build \
             -ldflags "-s -w -X main.version=${version} -X main.commit=${commit}" \
@@ -89,7 +89,8 @@ jobs:
         shell: pwsh
         working-directory: server-app/internal
         run: |
-          $version = git describe --tags --always
+          $version = git describe --tags --abbrev=0 2>$null
+          if ($LASTEXITCODE -ne 0) { $version = "dev" }
           $commit = git rev-parse --short=8 HEAD
           $env:CGO_ENABLED = "1"
           go build -ldflags "-s -w -X main.version=$version -X main.commit=$commit" -o ../nas-panel-server.exe .

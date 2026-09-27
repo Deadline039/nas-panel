@@ -1,43 +1,51 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
+	"unicode/utf8"
 )
 
 const (
-	Version             = 1
-	FrameSize           = 256
-	PayloadSize         = 246
-	RequestSize         = 12
-	FrameRequest        = 0
-	FrameResponse       = 1
-	PageOverview        = 0
-	PageNetwork         = 1
-	PageStorage         = 2
-	PageSystem          = 3
-	PageAbout           = 4
-	PageCount           = 5
-	ResponsePrefix      = 6
-	ResponsePage        = 0
-	ResponseSetting     = 1
-	SettingFanCurves    = 0
-	SettingBootloader   = 1
-	FanCurvePoints      = 20
-	FanCurvePayloadSize = FanCurvePoints * 2
+	Version                   = 1
+	FrameSize                 = 256
+	PayloadSize               = 246
+	RequestSize               = 12
+	FrameRequest              = 0
+	FrameResponse             = 1
+	FrameSet                  = 2
+	SettingFirmwareVersion    = 2
+	FirmwareVersionReportSize = 40
+	PageOverview              = 0
+	PageNetwork               = 1
+	PageStorage               = 2
+	PageSystem                = 3
+	PageAbout                 = 4
+	PageCount                 = 5
+	ResponsePrefix            = 6
+	ResponsePage              = 0
+	ResponseSetting           = 1
+	SettingFanCurves          = 0
+	SettingBootloader         = 1
+	FanCurvePoints            = 20
+	FanCurvePayloadSize       = FanCurvePoints * 2
 )
 
 // Request contains the report sent by the GD32 panel.
 type Request struct {
-	Sequence    uint32  `json:"sequence"`
-	Page        uint8   `json:"page"`
-	Voltage     float32 `json:"voltage"`
-	Current     float32 `json:"current"`
-	CPUFanSpeed uint8   `json:"cpuFanSpeed"`
-	HDDFanSpeed uint8   `json:"hddFanSpeed"`
-	ItemIndex   uint8   `json:"itemIndex"`
+	Type            uint8   `json:"type"`
+	FirmwareVersion string  `json:"firmwareVersion,omitempty"`
+	FirmwareCommit  string  `json:"firmwareCommit,omitempty"`
+	Sequence        uint32  `json:"sequence"`
+	Page            uint8   `json:"page"`
+	Voltage         float32 `json:"voltage"`
+	Current         float32 `json:"current"`
+	CPUFanSpeed     uint8   `json:"cpuFanSpeed"`
+	HDDFanSpeed     uint8   `json:"hddFanSpeed"`
+	ItemIndex       uint8   `json:"itemIndex"`
 }
 
 // OverviewPayload is the page-zero payload.
@@ -116,16 +124,34 @@ func DecodeRequest(frame []byte) (Request, error) {
 	if frame[0] != Version {
 		return Request{}, fmt.Errorf("protocol version %d, want %d", frame[0], Version)
 	}
-	if frame[1] != FrameRequest || frame[2] != 0 {
+	if (frame[1] != FrameRequest && frame[1] != FrameSet) || frame[2] != 0 {
 		return Request{}, errors.New("invalid request header")
 	}
 	length := int(binary.LittleEndian.Uint16(frame[7:9]))
-	if length != RequestSize || length > PayloadSize {
+	expected := RequestSize
+	if frame[1] == FrameSet {
+		expected = FirmwareVersionReportSize
+	}
+	if length != expected || length > PayloadSize {
 		return Request{}, fmt.Errorf("request payload size %d", length)
 	}
 	payload := frame[10 : 10+length]
 	if CRC8(payload) != frame[9] {
 		return Request{}, errors.New("request CRC mismatch")
+	}
+	if frame[1] == FrameSet {
+		if payload[0] != SettingFirmwareVersion {
+			return Request{}, errors.New("unknown SET command")
+		}
+		version, err := decodeVersionString(payload[1:31])
+		if err != nil {
+			return Request{}, err
+		}
+		commit, err := decodeVersionString(payload[31:40])
+		if err != nil {
+			return Request{}, err
+		}
+		return Request{Sequence: binary.LittleEndian.Uint32(frame[3:7]), Type: FrameSet, FirmwareVersion: version, FirmwareCommit: commit}, nil
 	}
 	request := Request{
 		Sequence:    binary.LittleEndian.Uint32(frame[3:7]),
@@ -155,11 +181,11 @@ func EncodeResponse(sequence uint32, response Response) ([FrameSize]byte, error)
 	payload := make([]byte, 0, PayloadSize)
 	payload = append(payload, response.Type, 1)
 	if response.Type == ResponseSetting {
-		if response.Setting != SettingFanCurves && response.Setting != SettingBootloader {
+		if response.Setting != SettingFanCurves && response.Setting != SettingBootloader && response.Setting != SettingFirmwareVersion {
 			return frame, fmt.Errorf("unknown setting %d", response.Setting)
 		}
-		if response.Setting == SettingBootloader && len(response.SettingData) != 0 {
-			return frame, errors.New("bootloader setting must not contain data")
+		if (response.Setting == SettingBootloader || response.Setting == SettingFirmwareVersion) && len(response.SettingData) != 0 {
+			return frame, errors.New("setting acknowledgement must not contain data")
 		}
 		if response.Setting == SettingFanCurves && len(response.SettingData) != FanCurvePayloadSize {
 			return frame, fmt.Errorf("fan curve payload size %d, want %d", len(response.SettingData), FanCurvePayloadSize)
@@ -263,4 +289,18 @@ func appendString(dst []byte, value string, size int) []byte {
 	dst = append(dst, make([]byte, size)...)
 	copy(dst[start:], []byte(value))
 	return dst
+}
+
+// decodeVersionString 校验固定宽度、以零结尾的版本报告字符串。
+func decodeVersionString(data []byte) (string, error) {
+	end := bytes.IndexByte(data, 0)
+	if end <= 0 || !utf8.Valid(data[:end]) {
+		return "", errors.New("invalid firmware version string")
+	}
+	for _, ch := range data[:end] {
+		if ch < 33 || ch > 126 {
+			return "", errors.New("invalid firmware version character")
+		}
+	}
+	return string(data[:end]), nil
 }

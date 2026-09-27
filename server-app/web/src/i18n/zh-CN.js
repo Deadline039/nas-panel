@@ -1,4 +1,9 @@
 export default {
+    firmwareNoFile: "未选择文件",
+    firmwareCurrentVersion: "面板固件版本",
+    firmwareVersionUnknown: "面板尚未上报版本，请连接面板；旧固件需先手动升级到支持版本上报的固件。",
+    firmwareReleaseHint: "检查最新正式 Release，忽略预发布版本；下载 firmware.zip 中的 APP BIN 后在左侧升级。",
+
 diskStandby: "休眠",
 ledBlink: "{color}闪烁",
 ledStandbyHint: "休眠时优先使用此设置，可复用健康状态的颜色。约每秒切换亮灭；休眠状态随每分钟 SMART 检查更新，不会唤醒硬盘。",
@@ -50,8 +55,6 @@ ledStandbyHint: "休眠时优先使用此设置，可复用健康状态的颜色
     firmwareStart: "开始升级",
     firmwareUploading: "正在上传…",
     firmwareRelease: "GitHub Release 升级",
-    firmwareReleaseHint: "从项目发布版本获取面板固件。",
-    firmwareReleaseSoon: "检查并升级（暂未开放）",
     firmware_preparing: "正在检查固件和设备…",
     firmware_entering: "正在进入升级模式…",
     firmware_waiting_dfu: "正在等待 DFU 设备…",
@@ -77,7 +80,7 @@ ledStandbyHint: "休眠时优先使用此设置，可复用健康状态的颜色
     hostName: '主机名', operatingSystem: '操作系统', processor: '处理器', memory: '内存', serverBuild: '服务构建', version: '版本', commit: 'Commit',
     panelConnection: '面板连接', product: '产品', serial: '序列号', transferState: '传输状态', normal: '传输正常', connecting: '正在连接', latestPage: '最近请求页面', itemIndex: '条目索引',
     accessAddresses: '设置页面地址', accessHint: '这些地址会作为 About 页二维码发送给 GD32。', automatic: '自动', custom: '自定义', noAddresses: '当前没有可用地址',
-    save: '保存设置', saving: '保存中…', saved: '已保存', webPort: 'Web 端口', restartRequired: '网页与二维码共用此端口；保存后重启服务生效', panelSerial: '面板序列号', autoSelect: '留空自动选择', serialHint: '多块面板时指定，重启后生效', serverVersion: '服务版本', publicScheme: '公开协议', schemeHint: '反向代理对外使用的协议', proxyPath: '反代路径', proxyHint: '留空表示部署在根路径', automaticAddresses: '自动生成的设置地址', automaticHint: '根据物理网卡 IPv4、Web 端口和反代路径生成。', extraLinks: '额外二维码链接', extraHint: '排在自动地址之后，由实体按键切换。', addLink: '添加链接', linkName: '名称', linkURL: '链接地址', removeLink: '删除链接', noLinks: '没有额外二维码链接',
+    save: '保存设置', saving: '保存中…', saved: '已保存', webPort: 'Web 端口', restartRequired: '网页与二维码共用此端口；保存后重启服务生效', panelSerial: '面板序列号', autoSelect: '留空自动选择', serialHint: '多块面板时指定，重启后生效', publicScheme: '公开协议', schemeHint: '反向代理对外使用的协议', proxyPath: '反代路径', proxyHint: '留空表示部署在根路径', automaticAddresses: '自动生成的设置地址', automaticHint: '根据物理网卡 IPv4、Web 端口和反代路径生成。', extraLinks: '额外二维码链接', extraHint: '排在自动地址之后，由实体按键切换。', addLink: '添加链接', linkName: '名称', linkURL: '链接地址', removeLink: '删除链接', noLinks: '没有额外二维码链接',
     bootEnergy: '当前开机耗电', totalEnergy: '累计总耗电', energyUnit: '度',
     language: '语言', theme: '主题', lightTheme: '浅色', darkTheme: '深色', page: '页面',
 }

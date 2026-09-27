@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)
 LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 

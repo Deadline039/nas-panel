@@ -92,3 +92,7 @@ HID v1 新增设置项 `page_set=1`（`USB_DATA_SETTING_BOOTLOADER`）。
 不附加其他数据，仍匹配当前请求序号与 CRC8。APP 接收后调用 `bootloader_request_update()`，
 通过 BKP 标记复位到 `3939:3927` DFU 模式。此项与风扇曲线设置 `page_set=0` 独立。
 网页升级流程及依赖见 `server-app/README.md`。
+
+### GD32 固件版本上报
+
+外层 `type=2` 为独立 SET 命令，协议仍为 v1。负载 40 字节：命令 `2`（1 字节）、固件 Git tag（30 字节）、Git commit（9 字节），字符串以 NUL 结尾。无 tag 时使用 `dev`。服务器以外层 `type=1`、同序号、6 字节公共前缀回复，前缀 `type=1, valid=1, page_set=2`，仍携带温度和 LED 字节。GD32 连接后首次发送时上报，此后每 30 秒重报一次，方便服务器重启后恢复版本信息。

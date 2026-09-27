@@ -14,19 +14,28 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define NETWORK_DISCONNECTED        0U
-#define NETWORK_GETTING_ADDRESS     1U
-#define NETWORK_CONNECTED           2U
+#define NETWORK_DISCONNECTED              0U
+#define NETWORK_GETTING_ADDRESS           1U
+#define NETWORK_CONNECTED                 2U
 
-#define DISK_STATUS_OK              0
-#define DISK_STATUS_WARNING         1
-#define DISK_STATUS_ERROR           2
+#define DISK_STATUS_OK                    0
+#define DISK_STATUS_WARNING               1
+#define DISK_STATUS_ERROR                 2
 
-#define USB_DATA_RESPONSE_PAGE      0U
-#define USB_DATA_RESPONSE_SETTING   1U
+#define USB_DATA_RESPONSE_PAGE            0U
+#define USB_DATA_RESPONSE_SETTING         1U
 
-#define USB_DATA_SETTING_FAN_CURVES 0U
-#define USB_DATA_SETTING_BOOTLOADER 1U
+#define USB_DATA_SETTING_FAN_CURVES       0U
+#define USB_DATA_SETTING_BOOTLOADER       1U
+#define USB_DATA_SETTING_FIRMWARE_VERSION 2U
+#define USB_DATA_TYPE_SET                 2U
+
+/** 独立上行 SET：固件 tag 与提交号，字符串必须以零结尾。 */
+typedef struct __attribute__((packed)) {
+    uint8_t setting;
+    char version[30];
+    char commit[9];
+} usb_data_version_t;
 
 typedef struct __attribute__((packed)) {
     uint8_t page;          /**< which page is in shown? */

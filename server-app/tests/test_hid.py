@@ -14,6 +14,9 @@ PAYLOAD_SIZE = 246
 VERSION = 1
 FRAME_REQUEST = 0
 FRAME_RESPONSE = 1
+FRAME_SET = 2
+SETTING_FIRMWARE_VERSION = 2
+VERSION_REPORT = struct.Struct("<B30s9s")
 RESPONSE_PAGE_DATA = 0
 RESPONSE_SETTING = 1
 SETTING_FAN_CURVES = 0
@@ -48,7 +51,7 @@ def crc8(data):
 
 def make_frame(kind, sequence, payload):
     """Build a zero-padded 256-byte HID report without a report ID."""
-    if kind not in (FRAME_REQUEST, FRAME_RESPONSE):
+    if kind not in (FRAME_REQUEST, FRAME_RESPONSE, FRAME_SET):
         raise ValueError("invalid frame type")
     if len(payload) > PAYLOAD_SIZE:
         raise ValueError(f"payload exceeds {PAYLOAD_SIZE} bytes")
@@ -76,6 +79,24 @@ def parse_request(raw):
     if cpu_fan > 100 or hdd_fan > 100:
         raise ValueError("invalid fan percentage")
     return sequence, page, voltage, current, cpu_fan, hdd_fan, item_idx
+
+
+def version_response(raw):
+    """校验版本 SET 上报并生成包含 LED 字节的确认。"""
+    if len(raw) != FRAME_SIZE:
+        raise ValueError("invalid SET frame size")
+    version, kind, reserved, sequence, length, checksum = HEADER.unpack_from(raw)
+    if (version, kind, reserved, length) != (VERSION, FRAME_SET, 0, VERSION_REPORT.size):
+        raise ValueError("invalid SET header")
+    payload = raw[HEADER.size:HEADER.size + length]
+    if crc8(payload) != checksum or payload[0] != SETTING_FIRMWARE_VERSION:
+        raise ValueError("invalid SET payload")
+    _, tag, commit = VERSION_REPORT.unpack(payload)
+    for value in (tag, commit):
+        if b"\0" not in value or not value.split(b"\0", 1)[0]:
+            raise ValueError("invalid version string")
+    return make_frame(FRAME_RESPONSE, sequence, RESPONSE.pack(
+        RESPONSE_SETTING, 1, SETTING_FIRMWARE_VERSION, 35, 40, LED_STATE))
 
 
 def make_page_data(page, sample, index):
@@ -152,6 +173,12 @@ def make_fan_setting(sequence):
 
 def self_check():
     """Check every request and response layout without opening a HID device."""
+    report = make_frame(FRAME_SET, 42, VERSION_REPORT.pack(SETTING_FIRMWARE_VERSION, b"v0.1", b"12345678"))
+    ack = version_response(report)
+    assert HEADER.unpack_from(ack)[4] == RESPONSE.size
+    assert ack[12] == SETTING_FIRMWARE_VERSION and ack[15] == LED_STATE
+    assert crc8(ack[10:16]) == ack[9]
+    print("version SET: report=40 bytes, ACK=6 bytes")
     expected_sizes = (24, 85, 39, 198, 88)
     for page, name in enumerate(PAGE_NAMES):
         request = make_frame(
@@ -249,6 +276,14 @@ def main():
                     last_notice = time.monotonic()
                 continue
             try:
+                if len(raw) > 1 and raw[1] == FRAME_SET:
+                    response = version_response(raw)
+                    written = device.write(b"\0" + response)
+                    if written != FRAME_SIZE + 1:
+                        raise OSError("incomplete version ACK write")
+                    print("Firmware version SET acknowledged", flush=True)
+                    count += 1
+                    continue
                 sequence, page, voltage, current, cpu_fan, hdd_fan, item_idx = parse_request(raw)
                 response = make_response(raw, samples[page])
             except ValueError as exc:

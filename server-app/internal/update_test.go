@@ -16,6 +16,9 @@ import (
 // TestCompareRelease 验证数值顺序和开发构建不会被误判为正式旧版。
 func TestCompareRelease(t *testing.T) {
 	for _, tc := range []struct{ current, latest, want string }{
+		{"v0.1", "v0.2", "available"},
+		{"v0.2", "v0.10", "available"},
+		{"v0.1", "v0.1", "current"},
 		{"v0.1.0", "v0.2.0", "available"},
 		{"v1.9.0", "v1.10.0", "available"},
 		{"1.2", "v1.2.0", "current"},
@@ -46,7 +49,7 @@ func TestFetchUpdate(t *testing.T) {
 		{"server error", 500, "", "", true},
 		{"bad JSON", 200, "invalid", "", true},
 		{"missing tag", 200, `{}`, "", true},
-		{"prerelease", 200, `{"tag_name":"v2.0.0","prerelease":true}`, "", true},
+		{"prerelease", 200, `{"tag_name":"v2.0.0","prerelease":true}`, "unreleased", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(tc.code); fmt.Fprint(w, tc.body) }))
@@ -110,6 +113,43 @@ func TestUpdateRoute(t *testing.T) {
 		}
 		if result.State != "available" {
 			t.Fatalf("%s: %+v", path, result)
+		}
+	}
+}
+
+// TestFirmwareUpdateRoute 确认面板与服务器使用各自版本，离线时不使用旧版本。
+func TestFirmwareUpdateRoute(t *testing.T) {
+	previous := http.DefaultClient
+	http.DefaultClient = &http.Client{Transport: updateTransport{}}
+	defer func() { http.DefaultClient = previous }()
+	for _, tc := range []struct {
+		target, version, state string
+		connected              bool
+		code                   int
+	}{
+		{"gd32", "v0.1", "available", true, 200},
+		{"gd32", "v1.2", "current", true, 200},
+		{"gd32", "", "unknown", true, 200},
+		{"gd32", "v0.1", "unknown", false, 200},
+		{"server", "v0.1", "current", true, 200},
+		{"invalid", "", "", false, 400},
+	} {
+		panel := &Service{status: Status{Connected: tc.connected, FirmwareVersion: tc.version}}
+		server := NewServer(&Store{cfg: Default()}, nil, panel, nil, BuildInfo{Version: "v1.2"}, t.TempDir(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+		writer := httptest.NewRecorder()
+		server.Handler().ServeHTTP(writer, httptest.NewRequest(http.MethodGet, "/api/v1/update?target="+tc.target, nil))
+		if writer.Code != tc.code {
+			t.Fatalf("%+v: HTTP %d", tc, writer.Code)
+		}
+		if tc.code != 200 {
+			continue
+		}
+		var result UpdateResult
+		if err := json.Unmarshal(writer.Body.Bytes(), &result); err != nil {
+			t.Fatal(err)
+		}
+		if result.State != tc.state {
+			t.Fatalf("%+v: %+v", tc, result)
 		}
 	}
 }

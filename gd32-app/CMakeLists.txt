@@ -45,6 +45,22 @@ if (GIT_FOUND)
 endif ()
 message(STATUS "Build hash: ${BUILD_HASH}")
 add_compile_definitions(BUILD_HASH="${BUILD_HASH}")
+set(BUILD_VERSION "dev")
+if (GIT_FOUND)
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAG
+            RESULT_VARIABLE GIT_TAG_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+    )
+    if (GIT_TAG_RESULT EQUAL 0)
+        set(BUILD_VERSION "${GIT_TAG}")
+    endif ()
+endif ()
+add_compile_definitions(BUILD_VERSION="${BUILD_VERSION}")
+
 
 add_compile_options(
         -mcpu=cortex-m4

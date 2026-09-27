@@ -55,3 +55,36 @@ func TestSetLEDs(t *testing.T) {
 		t.Fatal("failed to clear LEDs")
 	}
 }
+
+// TestFirmwareVersionReport 验证独立 SET 命令及损坏数据的拒绝行为。
+func TestFirmwareVersionReport(t *testing.T) {
+	frame := make([]byte, FrameSize)
+	frame[0], frame[1], frame[10] = Version, FrameSet, SettingFirmwareVersion
+	binary.LittleEndian.PutUint32(frame[3:7], 42)
+	binary.LittleEndian.PutUint16(frame[7:9], FirmwareVersionReportSize)
+	copy(frame[11:41], "v0.1")
+	copy(frame[41:50], "12345678")
+	frame[9] = CRC8(frame[10:50])
+	request, err := DecodeRequest(frame)
+	if err != nil || request.Type != FrameSet || request.Sequence != 42 || request.FirmwareVersion != "v0.1" || request.FirmwareCommit != "12345678" {
+		t.Fatalf("%+v: %v", request, err)
+	}
+	for _, offset := range []int{0, 1, 2, 7, 9, 10, 11} {
+		broken := append([]byte(nil), frame...)
+		broken[offset] ^= 0xff
+		if _, err := DecodeRequest(broken); err == nil {
+			t.Fatalf("accepted corrupt offset %d", offset)
+		}
+	}
+	for i := 11; i < 41; i++ {
+		frame[i] = 'x'
+	}
+	frame[9] = CRC8(frame[10:50])
+	if _, err := DecodeRequest(frame); err == nil {
+		t.Fatal("accepted unterminated version")
+	}
+	ack, err := EncodeResponse(42, Response{Type: ResponseSetting, Setting: SettingFirmwareVersion, LEDState: 0xe4})
+	if err != nil || ack[12] != SettingFirmwareVersion || ack[15] != 0xe4 || binary.LittleEndian.Uint16(ack[7:9]) != ResponsePrefix {
+		t.Fatalf("invalid ACK: %x %v", ack[:16], err)
+	}
+}

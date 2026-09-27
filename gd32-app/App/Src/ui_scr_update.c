@@ -21,11 +21,7 @@ extern lv_ui guider_ui;
 #define UI_COLOR_YELLOW 0xffc107U
 #define UI_COLOR_RED    0xff4040U
 
-#define FW_VERSION      "v0.1"
-
-#ifndef BUILD_HASH
-#define BUILD_HASH ""
-#endif /* BUILD_HASH */
+#include <firmware_version.h>
 
 static uint32_t ui_runtime_value(uint32_t minutes, char *unit);
 static double ui_storage_value(double kilobytes, uint8_t *unit);
@@ -256,13 +252,12 @@ void update_scr_storage(void)
 }
 
 /**
- * 
- * @brief Refresh the server version and QR link with bounded string reads.
+ * @brief 更新构建版本、服务器版本及二维码链接，限制字符串读取长度。
  */
 void update_scr_about_qrcode(void)
 {
     lv_label_set_text_fmt(guider_ui.screen_about_qrcode_label_fw_ver_val, "%s-%s",
-                          FW_VERSION, BUILD_HASH);
+                          BUILD_VERSION, BUILD_HASH);
     lv_label_set_text(guider_ui.screen_about_qrcode_label_build_time_val,
                       __DATE__ " " __TIME__);
 

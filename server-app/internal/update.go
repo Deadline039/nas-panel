@@ -17,16 +17,32 @@ const latestReleaseAPI = "https://api.github.com/repos/Deadline039/nas-panel/rel
 
 // UpdateResult 表示正式发布版本的检查结果，开发构建不推断版本先后。
 type UpdateResult struct {
-	State         string `json:"state"`
-	LatestVersion string `json:"latestVersion,omitempty"`
-	ReleaseURL    string `json:"releaseURL"`
+	State          string `json:"state"`
+	CurrentVersion string `json:"currentVersion"`
+	LatestVersion  string `json:"latestVersion,omitempty"`
+	ReleaseURL     string `json:"releaseURL"`
 }
 
 // checkUpdate 按需检查更新，独立于系统采集和 HID 请求处理。
 func (s *Server) checkUpdate(writer http.ResponseWriter, request *http.Request) {
 	ctx, cancel := context.WithTimeout(request.Context(), 8*time.Second)
 	defer cancel()
-	result, err := fetchUpdate(ctx, http.DefaultClient, latestReleaseAPI, s.build.Version)
+	current := s.build.Version
+	switch request.URL.Query().Get("target") {
+	case "", "server":
+	case "gd32":
+		current = ""
+		if s.panel != nil {
+			status := s.panel.Status()
+			if status.Connected {
+				current = status.FirmwareVersion
+			}
+		}
+	default:
+		writeError(writer, http.StatusBadRequest, fmt.Errorf("unknown update target"))
+		return
+	}
+	result, err := fetchUpdate(ctx, http.DefaultClient, latestReleaseAPI, current)
 	writer.Header().Set("Cache-Control", "no-store")
 	if err != nil {
 		s.logger.Warn("check update", "error", err)
@@ -38,7 +54,7 @@ func (s *Server) checkUpdate(writer http.ResponseWriter, request *http.Request) 
 
 // fetchUpdate 查询正式 Release；只生成固定项目下的发布链接。
 func fetchUpdate(ctx context.Context, client *http.Client, endpoint string, current string) (UpdateResult, error) {
-	result := UpdateResult{State: "unreleased", ReleaseURL: releasesURL}
+	result := UpdateResult{State: "unreleased", CurrentVersion: current, ReleaseURL: releasesURL}
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return result, err
@@ -64,7 +80,10 @@ func fetchUpdate(ctx context.Context, client *http.Client, endpoint string, curr
 	if err := json.NewDecoder(io.LimitReader(response.Body, 1024*1024)).Decode(&release); err != nil {
 		return result, err
 	}
-	if release.Tag == "" || release.Draft || release.Prerelease {
+	if release.Draft || release.Prerelease {
+		return result, nil
+	}
+	if release.Tag == "" {
 		return result, fmt.Errorf("invalid stable release response")
 	}
 	result.LatestVersion = release.Tag

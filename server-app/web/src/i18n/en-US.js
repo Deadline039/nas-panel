@@ -1,4 +1,9 @@
 export default {
+    firmwareNoFile: "No file chosen",
+    firmwareCurrentVersion: "Panel firmware version",
+    firmwareVersionUnknown: "No reported version. Connect the panel; older firmware requires a manual update to support version reporting.",
+    firmwareReleaseHint: "Check the latest stable Release, excluding prereleases. Download the APP BIN from firmware.zip and use the local upgrade form.",
+
 diskStandby: "Standby",
 ledBlink: "Blink {color}",
 ledStandbyHint: "Overrides cached health while asleep. Colors may also be used for health states. Toggles about once per second; standby is refreshed by the non-waking SMART check every minute.",
@@ -50,8 +55,6 @@ ledStandbyHint: "Overrides cached health while asleep. Colors may also be used f
     firmwareStart: "Start upgrade",
     firmwareUploading: "Uploading…",
     firmwareRelease: "GitHub Release upgrade",
-    firmwareReleaseHint: "Get panel firmware from the project releases.",
-    firmwareReleaseSoon: "Check and upgrade (coming soon)",
     firmware_preparing: "Checking image and device…",
     firmware_entering: "Entering bootloader…",
     firmware_waiting_dfu: "Waiting for DFU device…",
@@ -77,7 +80,7 @@ ledStandbyHint: "Overrides cached health while asleep. Colors may also be used f
     hostName: 'Host name', operatingSystem: 'Operating system', processor: 'Processor', memory: 'Memory', serverBuild: 'Server build', version: 'Version', commit: 'Commit',
     panelConnection: 'Panel connection', product: 'Product', serial: 'Serial', transferState: 'Transfer state', normal: 'Normal', connecting: 'Connecting', latestPage: 'Latest requested page', itemIndex: 'Item index',
     accessAddresses: 'Settings page addresses', accessHint: 'These URLs are sent to the GD32 as About-page QR codes.', automatic: 'Automatic', custom: 'Custom', noAddresses: 'No addresses available',
-    save: 'Save settings', saving: 'Saving…', saved: 'Saved', webPort: 'Web port', restartRequired: 'Shared by the website and QR links; save and restart the service to apply', panelSerial: 'Panel serial', autoSelect: 'Leave empty to select automatically', serialHint: 'Specify when using multiple panels; restart required', serverVersion: 'Server version', publicScheme: 'Public scheme', schemeHint: 'External scheme used by the reverse proxy', proxyPath: 'Proxy path', proxyHint: 'Leave empty when served at the root', automaticAddresses: 'Automatic settings addresses', automaticHint: 'Built from physical-interface IPv4 addresses, Web port and proxy path.', extraLinks: 'Additional QR links', extraHint: 'Shown after automatic addresses and selected with the panel buttons.', addLink: 'Add link', linkName: 'Name', linkURL: 'URL', removeLink: 'Remove link', noLinks: 'No additional QR links',
+    save: 'Save settings', saving: 'Saving…', saved: 'Saved', webPort: 'Web port', restartRequired: 'Shared by the website and QR links; save and restart the service to apply', panelSerial: 'Panel serial', autoSelect: 'Leave empty to select automatically', serialHint: 'Specify when using multiple panels; restart required', publicScheme: 'Public scheme', schemeHint: 'External scheme used by the reverse proxy', proxyPath: 'Proxy path', proxyHint: 'Leave empty when served at the root', automaticAddresses: 'Automatic settings addresses', automaticHint: 'Built from physical-interface IPv4 addresses, Web port and proxy path.', extraLinks: 'Additional QR links', extraHint: 'Shown after automatic addresses and selected with the panel buttons.', addLink: 'Add link', linkName: 'Name', linkURL: 'URL', removeLink: 'Remove link', noLinks: 'No additional QR links',
     bootEnergy: 'Current boot energy', totalEnergy: 'Lifetime energy', energyUnit: 'kWh',
     language: 'Language', theme: 'Theme', lightTheme: 'Light', darkTheme: 'Dark', page: 'Page',
 }

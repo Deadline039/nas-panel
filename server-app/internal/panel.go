@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +18,8 @@ const (
 
 // Status describes the current panel connection and latest exchange.
 type Status struct {
+	FirmwareVersion string    `json:"firmwareVersion"`
+	FirmwareCommit  string    `json:"firmwareCommit"`
 	Connected       bool      `json:"connected"`
 	Serial          string    `json:"serial"`
 	Product         string    `json:"product"`
@@ -185,7 +186,9 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 			s.setProtocolError(err)
 			continue
 		}
-		s.energy.Observe(request.Voltage, request.Current, time.Now())
+		if request.Type == FrameRequest {
+			s.energy.Observe(request.Voltage, request.Current, time.Now())
+		}
 		s.confirmSetting(request.Sequence)
 		snapshot := s.collector.Current()
 		response := responseFor(request, snapshot, s.config.Get(), s.build)
@@ -199,6 +202,14 @@ func (s *Service) serve(ctx context.Context, device *hid.Device) error {
 				HDDTemperature: snapshot.HDDTemperature,
 			}
 			settingRevision = revision
+		}
+		if request.Type == FrameSet {
+			s.mu.Lock()
+			s.status.FirmwareVersion = request.FirmwareVersion
+			s.status.FirmwareCommit = request.FirmwareCommit
+			s.mu.Unlock()
+			response = Response{Type: ResponseSetting, Setting: SettingFirmwareVersion, CPUTemperature: snapshot.CPUTemperature, HDDTemperature: snapshot.HDDTemperature}
+			settingRevision = 0
 		}
 		maintenance, boot = s.firmwareMode()
 		if maintenance {
@@ -339,7 +350,7 @@ func responseFor(request Request, snapshot Snapshot, cfg Config, build BuildInfo
 		total := lengthByte(len(links))
 		response.About.Index = request.ItemIndex
 		response.About.Total = total
-		response.About.ServerVersion = panelServerVersion(cfg.ServerVersion, build.Commit)
+		response.About.ServerVersion = panelServerVersion(build.Version, build.Commit)
 		if int(request.ItemIndex) < len(links) {
 			response.About.URL = links[request.ItemIndex].URL
 		}
@@ -347,10 +358,8 @@ func responseFor(request Request, snapshot Snapshot, cfg Config, build BuildInfo
 	return response
 }
 
+// panelServerVersion 使用与网页相同的构建 tag，并附带提交号。
 func panelServerVersion(version string, commit string) string {
-	if strings.HasPrefix(version, "v") == false {
-		version = "v" + version
-	}
 	return fmt.Sprintf("%s(%s)", version, commit)
 }
 
@@ -387,6 +396,8 @@ func (s *Service) setConnected(info *hid.DeviceInfo) {
 	s.status.Serial = info.SerialNbr
 	s.status.Product = info.ProductStr
 	s.status.LastError = ""
+	s.status.FirmwareVersion = ""
+	s.status.FirmwareCommit = ""
 	s.mu.Unlock()
 }
 
@@ -412,7 +423,9 @@ func (s *Service) setExchange(request Request) {
 	s.status.LastSeen = time.Now()
 	s.status.LastError = ""
 	s.status.Responses++
-	s.status.LatestReport = &request
+	if request.Type == FrameRequest {
+		s.status.LatestReport = &request
+	}
 	s.mu.Unlock()
 }
 

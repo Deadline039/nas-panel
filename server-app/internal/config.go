@@ -40,14 +40,13 @@ func (curve *FanCurve) UnmarshalJSON(data []byte) error {
 
 // Config contains user-editable server settings.
 type Config struct {
-	LED           LEDConfig `json:"led"`
-	WebPort       uint16    `json:"webPort"`
-	PanelSerial   string    `json:"panelSerial"`
-	ServerVersion string    `json:"serverVersion"`
-	PublicScheme  string    `json:"publicScheme"`
-	BasePath      string    `json:"basePath"`
-	Links         []Link    `json:"links"`
-	FanCurves     FanCurves `json:"fanCurves"`
+	LED          LEDConfig `json:"led"`
+	WebPort      uint16    `json:"webPort"`
+	PanelSerial  string    `json:"panelSerial"`
+	PublicScheme string    `json:"publicScheme"`
+	BasePath     string    `json:"basePath"`
+	Links        []Link    `json:"links"`
+	FanCurves    FanCurves `json:"fanCurves"`
 }
 
 // Store provides synchronized access to the persisted configuration.
@@ -60,12 +59,11 @@ type Store struct {
 // Default returns a usable configuration for a local installation.
 func Default() Config {
 	return Config{
-		WebPort:       8080,
-		LED:           defaultLEDConfig(),
-		ServerVersion: "0.1.0",
-		PublicScheme:  "http",
-		Links:         []Link{},
-		FanCurves:     defaultFanCurves(),
+		WebPort:      8080,
+		LED:          defaultLEDConfig(),
+		PublicScheme: "http",
+		Links:        []Link{},
+		FanCurves:    defaultFanCurves(),
 	}
 }
 
@@ -152,9 +150,6 @@ func Validate(cfg Config) error {
 	}
 	if cfg.WebPort == 0 {
 		return errors.New("web port must be between 1 and 65535")
-	}
-	if len([]byte(cfg.ServerVersion)) > 9 {
-		return errors.New("server version must fit in 9 UTF-8 bytes")
 	}
 	if cfg.PublicScheme != "http" && cfg.PublicScheme != "https" {
 		return errors.New("public scheme must be http or https")

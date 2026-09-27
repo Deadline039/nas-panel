@@ -60,7 +60,6 @@ Web 翻译文件位于 `web/src/i18n/`，每种语言一个文件；新增语言
 {
   "webPort": 8080,
   "panelSerial": "676643860B34",
-  "serverVersion": "0.1.0",
   "publicScheme": "https",
   "basePath": "/nas-panel",
   "links": [
@@ -75,7 +74,7 @@ Web 翻译文件位于 `web/src/i18n/`，每种语言一个文件；新增语言
 
 - `webPort`：Web 和 API 共用的端口（1～65535，默认 8080），监听所有本机地址。二维码自动使用同一端口，修改后保存并重启服务生效。旧的 `listen`、`publicPort` 字段及 `-listen` 启动参数已移除，不提供兼容迁移。
 - `panelSerial`：留空时连接第一块匹配的面板，修改后重启服务生效。
-- `serverVersion`：最多 9 个 UTF-8 字节，与 8 位 Git hash 组成 `v0.1.0(12345678)` 后发给面板。
+- 服务器版本由构建时当前提交可追溯的最近 Git tag 自动确定，无 tag 时为 `dev`。关于页显示该版本，GD32 接收同一版本及 8 位 Git hash，例如 `v0.1(12345678)`；不再提供可编辑的版本配置。
 - `publicScheme`、`basePath`：在 `config.json` 中设置二维码链接的公开协议和反代路径。服务根据每块物理网卡的 IPv4 地址自动生成二维码，例如 `https://192.168.1.10:8080/nas-panel/`。
 - 若反向代理的外部端口与 Web 端口不同，可在 `links` 添加完整的外部访问链接。
 - `links`：可选的额外二维码，排在自动生成的设置地址之后，每个 URL 最多 49 个 UTF-8 字节。
@@ -213,13 +212,13 @@ python3 tests/test_hid.py --dry-run
 
 Python HID 测试工具和协议细节见 [tests/README.md](tests/README.md)。
 
-About 页位于导航末尾，提供“检查更新”按钮。检查基于实际构建版本，与可编辑的 `serverVersion` 无关；纯 commit、开发构建及无法比较的版本会提示手动查看发布页面。当前只检查正式 Release，不自动下载或安装；没有正式 Release 时会明确提示。
+About 页位于导航末尾，提供“检查更新”按钮。检查基于 Git tag 注入的实际构建版本；无 tag 的开发构建及无法比较的版本会提示手动查看发布页面。当前只检查正式 Release，不自动下载或安装；没有正式 Release 时会明确提示。
 
 HID 协议编号统一为 v1，保留当前 256 字节帧和风扇设置数据布局。服务端、测试工具和 GD32 固件需配套更新。
 
 ## 面板固件升级
 
-About 页的“面板固件升级”支持上传本地 APP `.bin`；GitHub Release 固件升级入口暂未开放。
+About 页的“面板固件升级”支持上传本地 APP `.bin`；可检查 GitHub 正式 Release 并跳转下载 `firmware.zip`，解压 APP `.bin` 后通过本地升级入口刷写。服务器和 GD32 分别按自身版本逐段比较数字（例如 `v0.10 > v0.2`），忽略预发布；不会自动安装。GD32 版本来自独立 SET 上报，旧固件未上报时显示版本未知。
 浏览器将文件上传给 NAS 上的 Go 服务，由服务器调用 `dfu-util` 操作连接在 NAS 上的面板。
 
 服务器需要安装 `dfu-util` 并确保服务进程的 PATH 能找到它。Debian/Ubuntu 使用

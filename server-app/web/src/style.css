@@ -286,3 +286,8 @@ label small { display: block; margin-top: 7px; color: var(--muted); font-size: 1
 .firmware-progress { display: flex; align-items: center; gap: 12px; }
 .firmware-progress progress { flex: 1; min-width: 0; accent-color: var(--blue); }
 @media (max-width: 760px) { .firmware-methods { grid-template-columns: 1fr; } }
+
+
+.firmware-file-control { display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-soft); }
+.firmware-file-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 6px; }
+.firmware-file-control button { flex: none; margin-left: auto; }

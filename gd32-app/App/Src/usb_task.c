@@ -13,6 +13,7 @@
 #include <usbd_hw.h>
 
 #include <usb_data.h>
+#include <firmware_version.h>
 #include <fan_control.h>
 #include <bootloader.h>
 
@@ -107,6 +108,26 @@ static bool usb_data_check(usb_data_frame_t *frame, uint32_t sequence)
 }
 
 /**
+ * @brief 校验服务器对固件版本 SET 报告的确认。
+ * @param frame 服务器回复帧。
+ * @param sequence 当前报告序号。
+ * @return 确认帧合法时返回 true。
+ */
+static bool usb_version_ack_valid(usb_data_frame_t *frame, uint32_t sequence)
+{
+    if (frame->version != USB_DATA_PROTOCOL_VERSION || frame->type != USB_DATA_TYPE_RESPONSE ||
+        frame->sequence != sequence || frame->length != offsetof(usb_data_resp_t, data)) {
+        return false;
+    }
+    if (calc_crc8(frame->payload, frame->length) != frame->crc8) {
+        return false;
+    }
+    usb_data_resp_t *resp = (usb_data_resp_t *)frame->payload;
+    return resp->type == USB_DATA_RESPONSE_SETTING && resp->valid == 1U &&
+           resp->page_set == USB_DATA_SETTING_FIRMWARE_VERSION;
+}
+
+/**
  * @brief Sample voltage, current and FAN PWM percent in the USB task.
  * @param report Request data to update.
  */
@@ -127,7 +148,7 @@ static void sample_power_fan(usb_data_report_t *report)
 }
 
 /**
- * @brief 每秒请求页面数据，将有效回复发布到界面并原样输出 LED 字节。
+ * @brief 每秒请求页面数据，定期上报固件版本，将有效回复发布到界面并原样输出 LED 字节。
  * @param args 未使用的任务参数。
  */
 __NO_RETURN void usb_task(void *args)
@@ -151,6 +172,14 @@ __NO_RETURN void usb_task(void *args)
     TickType_t last_request = xTaskGetTickCount();
     TickType_t last_power_sample = xTaskGetTickCount();
     uint8_t current_page = g_usb_data_report.page;
+    TickType_t last_version_report = xTaskGetTickCount() - pdMS_TO_TICKS(30000U);
+    static const usb_data_version_t version_report = {
+        .setting = USB_DATA_SETTING_FIRMWARE_VERSION,
+        .version = BUILD_VERSION,
+        .commit = BUILD_HASH
+    };
+    _Static_assert(sizeof(BUILD_VERSION) <= 30U, "固件版本超过协议长度");
+    _Static_assert(sizeof(BUILD_HASH) <= 9U, "提交号超过协议长度");
 
     while (1) {
         TickType_t now = xTaskGetTickCount();
@@ -163,6 +192,7 @@ __NO_RETURN void usb_task(void *args)
             g_usb_data_resp.valid = 0;
             /* reset to 0 when disconnect */
             tx_frame.sequence = 0;
+            last_version_report = now - pdMS_TO_TICKS(30000U);
             vTaskDelayUntil(&last_tick, pdMS_TO_TICKS(10));
             continue;
         }
@@ -172,7 +202,13 @@ __NO_RETURN void usb_task(void *args)
         taskEXIT_CRITICAL();
 
         if (received == true) {
-            bool response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
+            bool response_valid = false;
+            if (tx_frame.type == USB_DATA_TYPE_SET) {
+                response_valid = usb_version_ack_valid(&rx_frame, tx_frame.sequence);
+            }
+            if (response_valid == false) {
+                response_valid = usb_data_check(&rx_frame, tx_frame.sequence);
+            }
             if (response_valid == true) {
                 g_usb_data_resp.led_state = ((usb_data_resp_t *)rx_frame.payload)->led_state;
                 hc595_send_byte(g_usb_data_resp.led_state);
@@ -185,7 +221,17 @@ __NO_RETURN void usb_task(void *args)
         }
 
         if (now - last_request >= REPORT_REQUEST_PERIOD_MS || current_page != g_usb_data_report.page) {
-            memcpy(tx_frame.payload, &g_usb_data_report, sizeof(g_usb_data_report));
+            memset(tx_frame.payload, 0, sizeof(tx_frame.payload));
+            if (now - last_version_report >= pdMS_TO_TICKS(30000U)) {
+                tx_frame.type = USB_DATA_TYPE_SET;
+                tx_frame.length = sizeof(version_report);
+                memcpy(tx_frame.payload, &version_report, sizeof(version_report));
+                last_version_report = now;
+            } else {
+                tx_frame.type = USB_DATA_TYPE_REQUEST;
+                tx_frame.length = sizeof(g_usb_data_report);
+                memcpy(tx_frame.payload, &g_usb_data_report, sizeof(g_usb_data_report));
+            }
             tx_frame.crc8 = calc_crc8(tx_frame.payload, tx_frame.length);
 
             taskENTER_CRITICAL();

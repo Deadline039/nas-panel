@@ -18,6 +18,10 @@ const checkingUpdate = ref(false)
 const updateResult = ref(null)
 const updateError = ref('')
 const firmwareFile = ref(null)
+const firmwareInput = ref(null)
+const checkingFirmwareUpdate = ref(false)
+const firmwareUpdateResult = ref(null)
+const firmwareUpdateError = ref('')
 const firmwareUploading = ref(false)
 const firmwareError = ref('')
 const firmwareAccepted = ref(null)
@@ -28,7 +32,7 @@ const hoveredFanPoint = ref(-1)
 const fanCurveVisiblePoints = 16
 const defaultFanCurve = [0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
 const form = reactive({
-  webPort: 8080, panelSerial: '', serverVersion: '', publicScheme: 'http', basePath: '', links: [],
+  webPort: 8080, panelSerial: '', publicScheme: 'http', basePath: '', links: [],
   fanCurves: { cpu: [...defaultFanCurve], hdd: [...defaultFanCurve] },
 })
 let refreshTimer
@@ -121,6 +125,22 @@ async function checkUpdate() {
     updateError.value = error.message
   } finally {
     checkingUpdate.value = false
+  }
+}
+
+async function checkFirmwareUpdate() {
+  checkingFirmwareUpdate.value = true
+  firmwareUpdateResult.value = null
+  firmwareUpdateError.value = ''
+  try {
+    const response = await fetch(`${pageBase}/api/v1/update?target=gd32`, { cache: 'no-store' })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`)
+    firmwareUpdateResult.value = data
+  } catch (error) {
+    firmwareUpdateError.value = error.message
+  } finally {
+    checkingFirmwareUpdate.value = false
   }
 }
 
@@ -352,7 +372,7 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
           <div class="firmware-methods">
             <div class="firmware-method">
               <h4>{{ t('firmwareLocal') }}</h4>
-              <label class="firmware-file"><span>{{ t('firmwareChoose') }}</span><input type="file" accept=".bin,application/octet-stream" :disabled="firmwareBusy" @change="selectFirmware"></label>
+              <div class="firmware-file"><span>{{ t('firmwareChoose') }}</span><div class="firmware-file-control"><span class="firmware-file-name">{{ firmwareFile?.name || t('firmwareNoFile') }}</span><button class="secondary" type="button" :disabled="firmwareBusy" @click="firmwareInput?.click()">{{ t('firmwareChoose') }}</button></div><input ref="firmwareInput" type="file" hidden accept=".bin,application/octet-stream" :disabled="firmwareBusy" @change="selectFirmware"></div>
               <p v-if="firmwareFile" class="firmware-selection">{{ firmwareFile.name }} · {{ formatBytes(firmwareFile.size) }}</p>
               <p class="firmware-note">{{ t('firmwarePowerHint') }}</p>
               <p v-if="firmware.available === false" class="warn">{{ t('firmwareMissingTool') }}</p>
@@ -360,7 +380,10 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
             </div>
             <div class="firmware-method">
               <h4>{{ t('firmwareRelease') }}</h4><p class="firmware-note">{{ t('firmwareReleaseHint') }}</p>
-              <button class="secondary" disabled>{{ t('firmwareReleaseSoon') }}</button>
+              <p>{{ t('firmwareCurrentVersion') }}: {{ panel.connected && panel.firmwareVersion ? panel.firmwareVersion : t('unknown') }}<span v-if="panel.connected && panel.firmwareCommit"> ({{ panel.firmwareCommit }})</span></p>
+              <p v-if="!panel.connected || !panel.firmwareVersion" class="firmware-note">{{ t('firmwareVersionUnknown') }}</p>
+              <button class="secondary" :disabled="checkingFirmwareUpdate" @click="checkFirmwareUpdate">{{ checkingFirmwareUpdate ? t('checkingUpdate') : t('checkUpdate') }}</button>
+              <div class="update-result" aria-live="polite"><p v-if="firmwareUpdateError" class="bad">{{ t('updateFailed', { message: firmwareUpdateError }) }}</p><template v-if="firmwareUpdateResult"><p>{{ t(`update_${firmwareUpdateResult.state}`) }}</p><p v-if="firmwareUpdateResult.latestVersion">{{ t('latestVersion') }}: {{ firmwareUpdateResult.latestVersion }}</p><a :href="firmwareUpdateResult.releaseURL" target="_blank" rel="noopener noreferrer">{{ t('viewRelease') }}</a></template></div>
             </div>
           </div>
           <div class="firmware-status" aria-live="polite">
@@ -376,7 +399,7 @@ onBeforeUnmount(() => window.clearInterval(refreshTimer))
           </div>
         </article><article class="panel-card address-card"><div class="section-head"><div><h3>{{ t('accessAddresses') }}</h3><span>{{ t('accessHint') }}</span></div></div><div class="address-list"><div v-for="link in allURLs" :key="`${link.kind}-${link.name}-${link.url}`"><span>{{ link.kind }} · {{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="allURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div></article></section>
 
-      <section v-else class="page-content"><article class="panel-card settings-card"><div class="section-head"><h3>{{ t('settings') }}</h3><button class="primary" :disabled="saving" @click="saveConfig">{{ saving ? t('saving') : saved ? t('saved') : t('save') }}</button></div><div v-if="formError" class="alert compact">{{ formError }}</div><div class="form-grid"><label><span>{{ t('webPort') }}</span><input v-model.number="form.webPort" type="number" min="1" max="65535" step="1"><small>{{ t('restartRequired') }}</small></label><label><span>{{ t('panelSerial') }}</span><input v-model.trim="form.panelSerial" :placeholder="t('autoSelect')"><small>{{ t('serialHint') }}</small></label><label><span>{{ t('serverVersion') }}</span><input v-model.trim="form.serverVersion" maxlength="9"><small>{{ byteLength(form.serverVersion) }}/9 bytes</small></label><label><span>{{ t('publicScheme') }}</span><select v-model="form.publicScheme"><option value="http">HTTP</option><option value="https">HTTPS</option></select><small>{{ t('schemeHint') }}</small></label><label><span>{{ t('proxyPath') }}</span><input v-model.trim="form.basePath" placeholder="/nas-panel"><small>{{ t('proxyHint') }}</small></label></div><div class="links-head"><div><h4>{{ t('automaticAddresses') }}</h4><p>{{ t('automaticHint') }}</p></div></div><div class="address-list compact-list"><div v-for="link in automaticURLs" :key="link.name"><span>{{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="automaticURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div><div class="links-head"><div><h4>{{ t('extraLinks') }}</h4><p>{{ t('extraHint') }}</p></div><button class="secondary" @click="addLink">{{ t('addLink') }}</button></div><div class="link-list"><div v-for="(link, index) in form.links" :key="index" class="link-row"><span class="link-number">{{ String(index + 1).padStart(2, '0') }}</span><input v-model.trim="link.name" :aria-label="t('linkName')" :placeholder="t('linkName')"><div class="url-input"><input v-model.trim="link.url" :aria-label="t('linkURL')" placeholder="https://"><small :class="{ over: byteLength(link.url) > 49 }">{{ byteLength(link.url) }}/49</small></div><button class="remove" :aria-label="t('removeLink')" @click="removeLink(index)">×</button></div><p v-if="form.links.length === 0" class="empty">{{ t('noLinks') }}</p></div></article></section>
+      <section v-else class="page-content"><article class="panel-card settings-card"><div class="section-head"><h3>{{ t('settings') }}</h3><button class="primary" :disabled="saving" @click="saveConfig">{{ saving ? t('saving') : saved ? t('saved') : t('save') }}</button></div><div v-if="formError" class="alert compact">{{ formError }}</div><div class="form-grid"><label><span>{{ t('webPort') }}</span><input v-model.number="form.webPort" type="number" min="1" max="65535" step="1"><small>{{ t('restartRequired') }}</small></label><label><span>{{ t('panelSerial') }}</span><input v-model.trim="form.panelSerial" :placeholder="t('autoSelect')"><small>{{ t('serialHint') }}</small></label><label><span>{{ t('publicScheme') }}</span><select v-model="form.publicScheme"><option value="http">HTTP</option><option value="https">HTTPS</option></select><small>{{ t('schemeHint') }}</small></label><label><span>{{ t('proxyPath') }}</span><input v-model.trim="form.basePath" placeholder="/nas-panel"><small>{{ t('proxyHint') }}</small></label></div><div class="links-head"><div><h4>{{ t('automaticAddresses') }}</h4><p>{{ t('automaticHint') }}</p></div></div><div class="address-list compact-list"><div v-for="link in automaticURLs" :key="link.name"><span>{{ link.name }}</span><code>{{ link.url }}</code></div><p v-if="automaticURLs.length === 0" class="empty">{{ t('noAddresses') }}</p></div><div class="links-head"><div><h4>{{ t('extraLinks') }}</h4><p>{{ t('extraHint') }}</p></div><button class="secondary" @click="addLink">{{ t('addLink') }}</button></div><div class="link-list"><div v-for="(link, index) in form.links" :key="index" class="link-row"><span class="link-number">{{ String(index + 1).padStart(2, '0') }}</span><input v-model.trim="link.name" :aria-label="t('linkName')" :placeholder="t('linkName')"><div class="url-input"><input v-model.trim="link.url" :aria-label="t('linkURL')" placeholder="https://"><small :class="{ over: byteLength(link.url) > 49 }">{{ byteLength(link.url) }}/49</small></div><button class="remove" :aria-label="t('removeLink')" @click="removeLink(index)">×</button></div><p v-if="form.links.length === 0" class="empty">{{ t('noLinks') }}</p></div></article></section>
     </main>
   </div>
 </template>

@@ -1,7 +1,6 @@
 {
   "webPort": 8080,
   "panelSerial": "",
-  "serverVersion": "0.1.0",
   "publicScheme": "http",
   "basePath": "",
   "links": [],
