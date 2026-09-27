@@ -138,6 +138,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Install Dependencies
         run: |
@@ -185,3 +187,49 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           archive: false
+
+  release:
+    name: Prepare Release draft
+    needs: [server, firmware]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release packages
+        uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          merge-multiple: true
+          skip-decompress: true
+
+      - name: Create or update Release draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          assets=(
+            release-assets/firmware.zip
+            release-assets/nas-panel-server-linux-amd64.tar.gz
+            release-assets/nas-panel-server-linux-arm64.tar.gz
+            release-assets/nas-panel-server-macos-amd64.tar.gz
+            release-assets/nas-panel-server-macos-arm64.tar.gz
+            release-assets/nas-panel-server-windows-amd64.zip
+          )
+          for asset in "${assets[@]}"; do
+            test -s "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
+          done
+
+          # 重跑时只更新草稿附件，保留手工编写的说明，不覆盖已发布版本。
+          if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft'); then
+            if [ "$draft" != "true" ]; then
+              echo "Release $RELEASE_TAG is already published; refusing to replace assets." >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag --draft --title "$RELEASE_TAG" --generate-notes
+          fi
