@@ -135,10 +135,10 @@ void setup_scr_screen_overview(lv_ui *ui)
 
     //Write codes screen_overview_label_mem_val
     ui->screen_overview_label_mem_val = lv_label_create(ui->screen_overview_cont_MEM);
-    lv_label_set_text(ui->screen_overview_label_mem_val, "25%");
+    lv_label_set_text(ui->screen_overview_label_mem_val, "100%");
     lv_label_set_long_mode(ui->screen_overview_label_mem_val, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_overview_label_mem_val, 3, 22);
-    lv_obj_set_size(ui->screen_overview_label_mem_val, 70, 26);
+    lv_obj_set_size(ui->screen_overview_label_mem_val, 85, 26);
 
     //Write style for screen_overview_label_mem_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_overview_label_mem_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -202,10 +202,10 @@ void setup_scr_screen_overview(lv_ui *ui)
 
     //Write codes screen_overview_label_cpu_val
     ui->screen_overview_label_cpu_val = lv_label_create(ui->screen_overview_cont_CPU);
-    lv_label_set_text(ui->screen_overview_label_cpu_val, "18%");
+    lv_label_set_text(ui->screen_overview_label_cpu_val, "100%");
     lv_label_set_long_mode(ui->screen_overview_label_cpu_val, LV_LABEL_LONG_WRAP);
     lv_obj_set_pos(ui->screen_overview_label_cpu_val, 3, 22);
-    lv_obj_set_size(ui->screen_overview_label_cpu_val, 70, 26);
+    lv_obj_set_size(ui->screen_overview_label_cpu_val, 85, 26);
 
     //Write style for screen_overview_label_cpu_val, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_overview_label_cpu_val, 0, LV_PART_MAIN|LV_STATE_DEFAULT);

@@ -2135,10 +2135,10 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 70,
+							"width": 85,
 							"height": 26,
 							"default_style": false,
-							"text": "18%",
+							"text": "100%",
 							"long_mode": "LV_LABEL_LONG_WRAP",
 							"is_static": false,
 							"custom_attribute": [],
@@ -2386,10 +2386,10 @@
 							"visible": true,
 							"isLock": false,
 							"flag": [],
-							"width": 70,
+							"width": 85,
 							"height": 26,
 							"default_style": false,
-							"text": "25%",
+							"text": "100%",
 							"long_mode": "LV_LABEL_LONG_WRAP",
 							"is_static": false,
 							"custom_attribute": [],
@@ -11664,13 +11664,13 @@
 									22
 								],
 								"size": [
-									70,
+									85,
 									26
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
-								"text": "25%",
+								"text": "100%",
 								"long_mode": "LV_LABEL_LONG_WRAP",
 								"is_static": false,
 								"style": [
@@ -11924,13 +11924,13 @@
 									22
 								],
 								"size": [
-									70,
+									85,
 									26
 								],
 								"default_style": false,
 								"attribute_type": "",
 								"custom_attribute": [],
-								"text": "18%",
+								"text": "100%",
 								"long_mode": "LV_LABEL_LONG_WRAP",
 								"is_static": false,
 								"style": [
